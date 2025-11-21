@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import ModelDetailsModal from '@/components/model/ModelDetailsModal';
 import Layout from '@/components/layout/Layout';
-import { Skeleton } from '@/components/ui/Skeleton';
+import Skeleton from '@/components/ui/Skeleton';
 
 function ModelPageContent() {
   const params = useParams();

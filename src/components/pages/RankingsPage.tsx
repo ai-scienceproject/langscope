@@ -194,7 +194,7 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
             <div className="text-sm text-gray-600">
               <span className="font-medium">Using data from: </span>
               {domain.transferDomains.map((transferDomain, idx) => {
-                const similarity = (domain as any).transferDomainSimilarities?.[transferDomain] || 85;
+                const similarity = domain.transferDomainSimilarities?.[transferDomain] || 85;
                 const domainName = transferDomain.split('-').map(w => 
                   w.charAt(0).toUpperCase() + w.slice(1)
                 ).join(' ');

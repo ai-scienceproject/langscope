@@ -11,6 +11,7 @@ export interface Domain {
   color?: string;
   isActive?: boolean;
   transferDomains?: string[];
+  transferDomainSimilarities?: Record<string, number>;
   confidenceScore?: number;
   createdAt: Date;
   updatedAt: Date;
