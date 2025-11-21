@@ -65,7 +65,9 @@ jobs:
       - name: Generate Prisma Client
         run: npm run db:generate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:password@localhost:5432/dbname' }}
+          # Use a dummy DATABASE_URL for Prisma Client generation (doesn't need real connection)
+          # Prisma generate only validates the schema, it doesn't connect to the database
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:password@localhost:5432/langscope_ci?schema=public' }}
 
       - name: Build Next.js application
         run: npm run build
