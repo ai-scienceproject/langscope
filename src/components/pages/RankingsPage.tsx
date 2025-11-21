@@ -139,10 +139,6 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
     );
   };
 
-  const handleStartArena = () => {
-    window.location.href = `/arena/${domainSlug}`;
-  };
-
   const handleCompare = () => {
     if (selectedModels.length >= 2) {
       window.location.href = `/compare?models=${selectedModels.join(',')}`;

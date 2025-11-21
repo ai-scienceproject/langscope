@@ -2,11 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   
-  // Disable Next.js dev indicator overlay
-  devIndicators: {
-    buildActivity: false,
-  },
-  
   // Image optimization configuration
   images: {
     remotePatterns: [

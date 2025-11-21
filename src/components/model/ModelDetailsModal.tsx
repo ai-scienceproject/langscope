@@ -463,10 +463,11 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
                         onChange={(e) => {
                           const inputTokens = parseFloat(e.target.value) || 0;
                           const outputTokens = inputTokens * 0.5; // Assume 50% output
-                          const inputCost = inputTokens * details.model.costPer1MTokens;
-                          const outputCost = outputTokens * details.model.costPer1MTokens * 1.2;
-                          const totalCost = inputCost + outputCost;
+                          // const inputCost = inputTokens * details.model.costPer1MTokens;
+                          // const outputCost = outputTokens * details.model.costPer1MTokens * 1.2;
+                          // const totalCost = inputCost + outputCost; // Reserved for future use
                           // Update display (simplified - would need state for full implementation)
+                          void outputTokens; // Suppress unused variable warning
                         }}
                       />
                     </div>

@@ -218,7 +218,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const featuredDomains = domains.filter((d) => d.featured);
   const filteredDomains = domains.filter((d) =>
     d.name.toLowerCase().includes(searchQuery.toLowerCase())
   );

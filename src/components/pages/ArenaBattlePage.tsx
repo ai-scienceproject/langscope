@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import ProgressBar from '@/components/ui/ProgressBar';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import type { ModelStanding } from '@/types';
@@ -16,10 +15,8 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
   const [totalBattles] = useState(10);
   const [selectedVote, setSelectedVote] = useState<'A' | 'B' | 'Tie' | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [prompt, setPrompt] = useState('');
   const [responseA, setResponseA] = useState('');
   const [responseB, setResponseB] = useState('');
-  const [showContext, setShowContext] = useState(false);
   const [evaluationId] = useState(() => `eval-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const [criteria, setCriteria] = useState({
     accuracy: false,
@@ -143,21 +140,12 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
 
   useEffect(() => {
     // Mock battle data
-    const prompts = [
-      'Write a Python function to calculate the factorial of a number',
-      'Explain quantum entanglement in simple terms',
-      'Create a REST API endpoint for user authentication',
-      'Write a poem about artificial intelligence',
-      'Solve: What is the derivative of x^2 + 3x + 5?',
-    ];
-    
     const contexts = [
       'Patient presents with symptoms of fever, cough, and difficulty breathing. Age 45, no known allergies. Seeking medical advice in Odia language.',
       'Legal contract analysis for software licensing agreement. Need to identify key terms and potential risks.',
       'Customer support query about product return policy. Customer is frustrated and needs immediate assistance.',
     ];
     
-    setPrompt(prompts[battleIndex % prompts.length]);
     setTestCaseContext(contexts[battleIndex % contexts.length]);
     setResponseA('Model A\'s response: Here\'s a recursive approach using Python...\n\nThis implements the solution efficiently.');
     setResponseB('Model B\'s response: Here\'s an iterative approach...\n\nThis avoids potential stack overflow issues.');
