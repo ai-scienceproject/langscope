@@ -12,6 +12,8 @@ jobs:
     name: Deploy Application
     runs-on: ubuntu-latest
     environment: production
+    # Skip deployment for now - set to false to disable
+    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
