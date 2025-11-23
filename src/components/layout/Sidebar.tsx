@@ -5,10 +5,11 @@ import { cn } from '@/lib/utils';
 import type { FilterState, ModelStanding } from '@/types';
 
 interface SidebarProps {
-  type: 'filter' | 'leaderboard';
+  type: 'filter' | 'leaderboard' | 'domains';
   filters?: FilterState;
   onFilterChange?: (filters: FilterState) => void;
   standings?: ModelStanding[];
+  domains?: Array<{ id: string; name: string; slug: string; battleCount?: number; modelCount?: number }>;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   filters,
   onFilterChange,
   standings,
+  domains,
   className,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -37,6 +39,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     return (
       <LeaderboardSidebar
         standings={standings}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed(!collapsed)}
+        className={className}
+      />
+    );
+  }
+
+  if (type === 'domains' && domains) {
+    return (
+      <DomainsSidebar
+        domains={domains}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
         className={className}
@@ -288,6 +301,121 @@ const LeaderboardSidebar: React.FC<{
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Toggle button */}
+      <button
+        onClick={onToggleCollapse}
+        className="absolute top-4 -left-4 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50"
+      >
+        <svg
+          className={cn('w-4 h-4 text-gray-600 transition-transform', collapsed && 'rotate-180')}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+    </aside>
+  );
+};
+
+// Domains Sidebar Component (styled like "What's trending")
+const DomainsSidebar: React.FC<{
+  domains: Array<{ id: string; name: string; slug: string; icon?: string; battleCount?: number; modelCount?: number }>;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  className?: string;
+}> = ({ domains, collapsed, onToggleCollapse, className }) => {
+  const formatNumber = (num: number = 0) => {
+    // Format with commas for thousands
+    return num.toLocaleString('en-US');
+  };
+
+  // Icon mapping for domains (fallback if icon not provided)
+  const getDomainIcon = (domain: { name: string; slug: string; icon?: string }) => {
+    if (domain.icon) {
+      return domain.icon;
+    }
+    
+    // Fallback icon mapping based on domain name/slug
+    const iconMap: Record<string, string> = {
+      'code-generation': '💻',
+      'mathematical-reasoning': '🔢',
+      'creative-writing': '✍️',
+      'data-analysis': '📊',
+      'language-translation': '🌍',
+      'question-answering': '❓',
+      'medical-assistance': '🏥',
+      'legal-analysis': '⚖️',
+      'finance': '💰',
+      'education': '📚',
+      'customer-support': '💬',
+      'content-moderation': '🛡️',
+    };
+    
+    return iconMap[domain.slug] || '📄';
+  };
+
+
+  return (
+    <aside
+      className={cn(
+        'bg-white border-l border-gray-200 transition-all duration-300 sticky top-0 h-fit',
+        collapsed ? 'w-0' : 'w-80',
+        className
+      )}
+    >
+      {!collapsed && (
+        <div className="px-4 sm:px-6 pt-0 pb-4 sm:pb-6">
+          <h3 className="text-base sm:text-lg font-bold text-black mb-2 sm:mb-3 pt-0">Domain Showcase</h3>
+          <div className="space-y-1 sm:space-y-1.5">
+            {domains.slice(0, 10).map((domain) => (
+              <div
+                key={domain.id}
+                className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-gradient-to-r from-white to-light-gray/30 border border-gray-100 hover:border-dark-gray/20 hover:shadow-md hover:shadow-dark-gray/10 transition-all duration-300 cursor-pointer group hover:scale-[1.02] hover:bg-gradient-to-r hover:from-light-gray/50 hover:to-light-gray"
+                onClick={() => {
+                  window.location.href = `/rankings/${domain.slug}`;
+                }}
+              >
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-dark-gray/10 to-dark-gray/5 flex items-center justify-center text-base sm:text-lg group-hover:scale-110 transition-transform duration-300">
+                    <span aria-hidden="true">
+                      {getDomainIcon(domain)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm sm:text-base font-bold text-black truncate group-hover:text-dark-gray transition-colors">
+                      {domain.name}
+                    </p>
+                    <p className="text-xs sm:text-sm text-dark-gray mt-0.5">
+                      {formatNumber(domain.battleCount || 0)} battles — {formatNumber(domain.modelCount || 0)} models ranked
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Arrow indicator */}
+                <svg 
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-dark-gray/40 group-hover:text-dark-gray group-hover:translate-x-0.5 transition-all duration-300 flex-shrink-0" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              window.location.href = '/rankings';
+            }}
+            className="w-full mt-4 sm:mt-6 px-4 py-2.5 text-sm font-semibold text-white bg-black hover:bg-dark-gray rounded-lg transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+          >
+            View All Domains →
+          </button>
         </div>
       )}
 

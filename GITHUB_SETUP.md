@@ -63,9 +63,6 @@ For the CI/CD pipeline to work, you need to set up secrets in GitHub:
 
 ### Required Secrets
 
-- `DATABASE_URL` - Your PostgreSQL connection string
-  - Example: `postgresql://user:password@host:5432/dbname`
-
 - `NEXT_PUBLIC_API_URL` - Your API URL
   - Example: `https://api.langscope.ai` or `http://localhost:3001` for development
 
@@ -127,8 +124,9 @@ Runs on:
 
 ## Troubleshooting
 
-### CI Fails with "DATABASE_URL not found"
-- Add the `DATABASE_URL` secret in GitHub repository settings
+### CI Fails with Build Errors
+- Ensure all required environment variables are set in GitHub Secrets
+- Check that `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` are configured
 - For CI builds, you can use a dummy connection string if database isn't needed for build
 
 ### Build fails

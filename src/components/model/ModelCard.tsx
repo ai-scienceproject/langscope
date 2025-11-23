@@ -28,13 +28,13 @@ const ModelCard: React.FC<ModelCardProps> = ({
       )}
     >
       <div className="flex items-start gap-3">
-        {/* Model avatar/logo */}
+        {/* Organization Logo */}
         <Avatar
           src={model.logo}
-          alt={model.name}
+          alt={model.provider}
           size={variant === 'compact' ? 'md' : 'lg'}
           shape="square"
-          fallback={model.name.charAt(0)}
+          fallback={model.provider.charAt(0)}
         />
 
         {/* Content */}
@@ -44,7 +44,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
               <h4 className="text-base font-semibold text-gray-900 truncate group-hover:text-primary-600 transition-colors">
                 {model.name}
               </h4>
-              <p className="text-sm text-gray-500">{model.provider}</p>
+              <p className="text-sm text-gray-500 truncate">{model.provider}</p>
             </div>
 
             {model.verified && (

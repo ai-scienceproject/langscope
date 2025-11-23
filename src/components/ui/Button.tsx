@@ -27,10 +27,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 rounded-xl';
     
     const variants = {
-      primary: 'bg-slate-700 text-white hover:bg-slate-800 focus-visible:ring-slate-600 shadow-lg shadow-slate-500/20 hover:shadow-xl hover:shadow-slate-500/30 transition-all duration-300',
-      secondary: 'bg-gradient-to-r from-secondary-500 to-secondary-600 text-white hover:from-secondary-600 hover:to-secondary-700 focus-visible:ring-secondary-500 shadow-md shadow-secondary-500/20 hover:shadow-lg',
-      outline: 'border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-slate-300 focus-visible:ring-slate-500 transition-all duration-200',
-      ghost: 'text-gray-700 hover:bg-gray-100 hover:text-slate-700 focus-visible:ring-slate-500 transition-all duration-200',
+      primary: 'bg-black text-white hover:bg-dark-gray focus-visible:ring-black shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 transition-all duration-300',
+      secondary: 'bg-dark-gray text-white hover:bg-black focus-visible:ring-dark-gray shadow-md shadow-dark-gray/20 hover:shadow-lg',
+      outline: 'border-2 border-dark-gray bg-white text-black hover:bg-light-gray hover:border-black focus-visible:ring-black transition-all duration-200',
+      ghost: 'text-dark-gray hover:bg-light-gray hover:text-black focus-visible:ring-black transition-all duration-200',
       danger: 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 focus-visible:ring-red-600 shadow-lg shadow-red-500/30',
     };
     

@@ -141,11 +141,11 @@ export default function AboutPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-primary-600">●</span>
-                <span><strong>Backend:</strong> Next.js API Routes, PostgreSQL, Prisma ORM</span>
+                <span><strong>Backend:</strong> Next.js API Routes, MongoDB, Mongoose</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-primary-600">●</span>
-                <span><strong>Database:</strong> PostgreSQL with Prisma ORM, secure data hashing</span>
+                <span><strong>Database:</strong> MongoDB with Mongoose ODM, secure data hashing</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-primary-600">●</span>

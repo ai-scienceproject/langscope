@@ -1,5 +1,7 @@
 -- Langscope Database Schema
--- PostgreSQL 14+
+-- NOTE: This file is for reference only. The project now uses MongoDB.
+-- This SQL schema was the original PostgreSQL schema and is kept for historical reference.
+-- For MongoDB setup, see database/README.md
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

@@ -20,6 +20,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -50,18 +51,43 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
   ];
 
   return (
-    <aside className={cn(
-      'bg-white border-r border-gray-200/80 flex flex-col h-screen sticky top-0 transition-all duration-300 shadow-sm',
-      collapsed ? 'w-20' : 'w-64'
-    )}>
+    <>
+      {/* Mobile Hamburger Button */}
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-black text-white shadow-lg hover:bg-dark-gray transition-colors"
+        aria-label="Toggle menu"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {mobileMenuOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={cn(
+        'bg-white border-r border-gray-200 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 shadow-sm z-40',
+        collapsed ? 'w-16 sm:w-20' : 'w-64 sm:w-72',
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      )}>
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200/80">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300">
+      <div className="p-4 sm:p-6 border-b border-gray-200/80">
+        <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center shadow-lg hover:bg-dark-gray transition-all duration-300">
             <span className="text-white font-bold text-lg">L</span>
           </div>
           {!collapsed && (
-            <span className="text-xl font-bold text-slate-900">
+            <span className="text-xl font-bold text-black">
               Langscope
             </span>
           )}
@@ -76,20 +102,21 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => setMobileMenuOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group',
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-200'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-light-gray text-black shadow-sm border border-gray-200'
+                  : 'text-dark-gray hover:bg-light-gray hover:text-black'
               )}
               title={collapsed ? item.name : undefined}
             >
               <span className={cn(
                 'flex-shrink-0 transition-all duration-200',
                 isActive 
-                  ? 'text-slate-700' 
-                  : 'text-slate-500 group-hover:text-slate-700'
+                  ? 'text-black' 
+                  : 'text-dark-gray group-hover:text-black'
               )}>
                 {item.icon}
               </span>
@@ -105,13 +132,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
           {/* Upgrade Section */}
           {!collapsed && (
             <div className="px-3 pb-4">
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <div className="text-xs font-semibold text-slate-900 mb-1">Current plan</div>
-                <div className="text-xs text-slate-600 mb-3">Free trial</div>
-                <button className="w-full bg-slate-700 text-white text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-800 transition-all duration-200 shadow-sm">
+              <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
+                <div className="text-xs font-semibold text-black mb-1">Current plan</div>
+                <div className="text-xs text-dark-gray mb-3">Free trial</div>
+                <button className="w-full bg-black text-white text-xs font-semibold py-2 px-3 rounded-lg hover:bg-dark-gray transition-all duration-200 shadow-sm">
                   Upgrade to Pro
                 </button>
-                <p className="text-xs text-slate-500 mt-2 leading-tight">get the latest and exclusive features</p>
+                <p className="text-xs text-dark-gray mt-2 leading-tight">get the latest and exclusive features</p>
               </div>
             </div>
           )}
@@ -119,10 +146,10 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
           {/* User Profile */}
           <div className="px-3 pb-4 border-t border-gray-200/80 pt-4">
             <div className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group",
+              "flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-light-gray transition-colors cursor-pointer group",
               collapsed && 'justify-center'
             )}>
-              <div className="w-10 h-10 rounded-xl bg-slate-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white text-sm font-semibold shadow-sm flex-shrink-0">
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.name} className="w-full h-full rounded-xl object-cover" />
                 ) : (
@@ -132,11 +159,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
               {!collapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-slate-900 truncate">{user.name}</div>
-                    <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                    <div className="text-sm font-semibold text-black truncate">{user.name}</div>
+                    <div className="text-xs text-dark-gray truncate">{user.email}</div>
                   </div>
                   <svg
-                    className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors flex-shrink-0"
+                    className="w-4 h-4 text-dark-gray group-hover:text-black transition-colors flex-shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -153,13 +180,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
             <button
               onClick={handleLogout}
               className={cn(
-                "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group",
+                "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group",
                 collapsed && 'justify-center'
               )}
               title={collapsed ? 'Logout' : undefined}
             >
               <svg
-                className="w-5 h-5 text-slate-400 group-hover:text-red-500 transition-colors"
+                className="w-5 h-5 text-dark-gray group-hover:text-red-500 transition-colors"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -176,14 +203,20 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
           {!collapsed ? (
             <>
               <button
-                onClick={() => router.push('/login')}
-                className="w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                onClick={() => {
+                  router.push('/login');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full px-3 py-2.5 rounded-xl text-sm font-medium text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
               >
                 Log in
               </button>
               <button
-                onClick={() => router.push('/signup')}
-                className="w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-slate-700 hover:bg-slate-800 transition-all duration-200 shadow-sm flex items-center justify-center"
+                onClick={() => {
+                  router.push('/signup');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
               >
                 Sign up
               </button>
@@ -191,8 +224,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
           ) : (
             <>
               <button
-                onClick={() => router.push('/login')}
-                className="w-full p-2.5 rounded-xl text-slate-700 hover:bg-gray-50 transition-all duration-200 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
+                onClick={() => {
+                  router.push('/login');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full p-2.5 rounded-xl text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
                 title="Log in"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -200,8 +236,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
                 </svg>
               </button>
               <button
-                onClick={() => router.push('/signup')}
-                className="w-full p-2.5 rounded-xl text-white bg-slate-700 hover:bg-slate-800 transition-all duration-200 shadow-sm flex items-center justify-center"
+                onClick={() => {
+                  router.push('/signup');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full p-2.5 rounded-xl text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
                 title="Sign up"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -213,11 +252,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
         </div>
       )}
 
-      {/* Collapse Toggle */}
-      <div className="px-3 pb-4 border-t border-gray-200/80 pt-4">
+      {/* Collapse Toggle - Hidden on mobile */}
+      <div className="hidden lg:block px-3 pb-4 border-t border-gray-200/80 pt-4">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group"
+          className="w-full flex items-center justify-center p-2.5 rounded-xl text-dark-gray hover:bg-light-gray hover:text-black transition-all duration-200 group"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg
@@ -235,6 +274,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false
       </div>
 
     </aside>
+    </>
   );
 };
 

@@ -6,6 +6,7 @@ import Layout from '@/components/layout/Layout';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import Avatar from '@/components/ui/Avatar';
 import type { ModelRanking } from '@/types';
 
 interface ResultsDashboardPageProps {
@@ -44,202 +45,263 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Format domain name from slug
-    const domainName = domainSlug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
-    // Mock results data
-    const mockResults = {
-      userRank: 3,
-      predictedRank: 5,
-      modelName: 'Claude 3 Opus',
-      actualScore: 1420,
-      predictedScore: 1350,
-      domainName,
-      totalBattles: 10,
-      modelsTested: 3,
-      winLossMatrix: {
-        'claude-3-opus': {
-          'gpt-4-turbo': { wins: 2, losses: 1 },
-          'gemini-pro': { wins: 3, losses: 0 },
-        },
-        'gpt-4-turbo': {
-          'claude-3-opus': { wins: 1, losses: 2 },
-          'gemini-pro': { wins: 2, losses: 1 },
-        },
-        'gemini-pro': {
-          'claude-3-opus': { wins: 0, losses: 3 },
-          'gpt-4-turbo': { wins: 1, losses: 2 },
-        },
-      },
-      confidenceBefore: 75,
-      confidenceAfter: 88,
-      predictionAccuracy: 70,
-      rankings: [
-        {
-          rank: 1,
-          previousRank: 1,
-          model: {
-            id: 'gpt-4-turbo',
-            name: 'GPT-4 Turbo',
-            slug: 'gpt-4-turbo',
-            provider: 'OpenAI',
-            logo: '🤖',
-            description: 'GPT-4 Turbo',
-            type: 'api-only' as const,
-            contextLength: 128000,
-            costPer1MTokens: 10.0,
-            verified: true,
-            releaseDate: new Date('2024-01-01'),
-            createdAt: new Date('2024-01-01'),
-            updatedAt: new Date(),
-          },
-          score: 1450,
-          uncertainty: 15,
-          battleCount: 155,
-          winRate: 75.2,
-          domain: {
-            id: '1',
-            name: domainName,
-            slug: domainSlug,
-            description: `Evaluate models on ${domainName.toLowerCase()}`,
-            icon: domainSlug.includes('code') ? '💻' : domainSlug.includes('math') ? '🔢' : 
-                  domainSlug.includes('creative') ? '✍️' : domainSlug.includes('instruction') ? '📋' :
-                  domainSlug.includes('question') ? '❓' : '📄',
-            battleCount: 15234,
-            modelCount: 45,
-            color: '#3B82F6',
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          lastUpdated: new Date(),
-        },
-        {
-          rank: 2,
-          previousRank: 2,
-          model: {
-            id: 'claude-3-opus',
-            name: 'Claude 3 Opus',
-            slug: 'claude-3-opus',
-            provider: 'Anthropic',
-            logo: '🤖',
-            description: 'Claude 3 Opus',
-            type: 'api-only' as const,
-            contextLength: 200000,
-            costPer1MTokens: 15.0,
-            verified: true,
-            releaseDate: new Date('2024-01-01'),
-            createdAt: new Date('2024-01-01'),
-            updatedAt: new Date(),
-          },
-          score: 1420,
-          uncertainty: 18,
-          battleCount: 153,
-          winRate: 73.8,
-          domain: {
-            id: '1',
-            name: domainName,
-            slug: domainSlug,
-            description: `Evaluate models on ${domainName.toLowerCase()}`,
-            icon: domainSlug.includes('code') ? '💻' : domainSlug.includes('math') ? '🔢' : 
-                  domainSlug.includes('creative') ? '✍️' : domainSlug.includes('instruction') ? '📋' :
-                  domainSlug.includes('question') ? '❓' : '📄',
-            battleCount: 15234,
-            modelCount: 45,
-            color: '#3B82F6',
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          lastUpdated: new Date(),
-        },
-        {
-          rank: 3,
-          previousRank: 4,
-          model: {
-            id: 'gemini-pro',
-            name: 'Gemini Pro',
-            slug: 'gemini-pro',
-            provider: 'Google',
-            logo: '🤖',
-            description: 'Gemini Pro',
-            type: 'api-only' as const,
-            contextLength: 128000,
-            costPer1MTokens: 7.0,
-            verified: true,
-            releaseDate: new Date('2024-01-01'),
-            createdAt: new Date('2024-01-01'),
-            updatedAt: new Date(),
-          },
-          score: 1380,
-          uncertainty: 20,
-          battleCount: 150,
-          winRate: 68.5,
-          domain: {
-            id: '1',
-            name: domainName,
-            slug: domainSlug,
-            description: `Evaluate models on ${domainName.toLowerCase()}`,
-            icon: domainSlug.includes('code') ? '💻' : domainSlug.includes('math') ? '🔢' : 
-                  domainSlug.includes('creative') ? '✍️' : domainSlug.includes('instruction') ? '📋' :
-                  domainSlug.includes('question') ? '❓' : '📄',
-            battleCount: 15234,
-            modelCount: 45,
-            color: '#3B82F6',
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          lastUpdated: new Date(),
-        },
-      ],
+    const fetchResults = async () => {
+      if (!evaluationId || evaluationId === 'demo') {
+        // If no evaluation ID, show empty state
+        const domainName = domainSlug
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        setResults({
+          userRank: 0,
+          predictedRank: 0,
+          modelName: 'No Evaluation',
+          actualScore: 0,
+          predictedScore: 0,
+          rankings: [],
+          domainName,
+          totalBattles: 0,
+          modelsTested: 0,
+          winLossMatrix: {},
+          confidenceBefore: 0,
+          confidenceAfter: 0,
+          predictionAccuracy: 0,
+        });
+        setInsights([]);
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Check if evaluationId is a demo or invalid ID
+        if (evaluationId === 'demo' || evaluationId?.startsWith('eval-')) {
+          // For demo/invalid IDs, try to get rankings from domain instead
+          const rankingsResponse = await fetch(`/api/rankings/${domainSlug}`);
+          
+          if (rankingsResponse.ok) {
+            const rankingsResult = await rankingsResponse.json();
+            
+            if (rankingsResult.data && rankingsResult.data.length > 0) {
+              const rankings = rankingsResult.data;
+              const domainName = rankingsResult.domain?.name || domainSlug
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+              
+              setResults({
+                userRank: rankings.length > 0 ? rankings[0].rank : 0,
+                predictedRank: rankings.length > 0 ? rankings[0].rank : 0,
+                modelName: rankings.length > 0 ? rankings[0].model.name : 'No Model',
+                actualScore: rankings.length > 0 ? rankings[0].score : 0,
+                predictedScore: rankings.length > 0 ? rankings[0].score : 0,
+                rankings: rankings,
+                domainName,
+                totalBattles: rankingsResult.domain?.battleCount || rankings.reduce((sum: number, r: any) => sum + (r.battleCount || 0), 0),
+                modelsTested: rankings.length,
+                winLossMatrix: {},
+                confidenceBefore: 75,
+                confidenceAfter: 88,
+                predictionAccuracy: 70,
+              });
+              
+              const generatedInsights: Insight[] = [];
+              if (rankings.length > 0) {
+                generatedInsights.push({
+                  id: '1',
+                  title: 'Top Performer',
+                  description: `${rankings[0].model.name} leads with ${rankings[0].score} ELO score`,
+                  icon: '🏆',
+                  color: 'green',
+                });
+              }
+              const totalBattles = rankingsResult.domain?.battleCount || rankings.reduce((sum: number, r: any) => sum + (r.battleCount || 0), 0);
+              if (totalBattles > 0) {
+                generatedInsights.push({
+                  id: '2',
+                  title: 'Battle Activity',
+                  description: `${totalBattles} battles completed across ${rankings.length} models`,
+                  icon: '⚔️',
+                  color: 'blue',
+                });
+              }
+              setInsights(generatedInsights);
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // If we can't get domain rankings, show empty state with domain name
+          const domainName = domainSlug
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          setResults({
+            userRank: 0,
+            predictedRank: 0,
+            modelName: 'No Evaluation',
+            actualScore: 0,
+            predictedScore: 0,
+            rankings: [],
+            domainName,
+            totalBattles: 0,
+            modelsTested: 0,
+            winLossMatrix: {},
+            confidenceBefore: 0,
+            confidenceAfter: 0,
+            predictionAccuracy: 0,
+          });
+          setInsights([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch evaluation results for valid ObjectId
+        const response = await fetch(`/api/evaluations/${evaluationId}`);
+        
+        if (!response.ok) {
+          // If evaluation not found, fall back to domain rankings
+          const rankingsResponse = await fetch(`/api/rankings/${domainSlug}`);
+          if (rankingsResponse.ok) {
+            const rankingsResult = await rankingsResponse.json();
+            if (rankingsResult.data && rankingsResult.data.length > 0) {
+              const rankings = rankingsResult.data;
+              const domainName = rankingsResult.domain?.name || domainSlug
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+              
+              setResults({
+                userRank: rankings.length > 0 ? rankings[0].rank : 0,
+                predictedRank: rankings.length > 0 ? rankings[0].rank : 0,
+                modelName: rankings.length > 0 ? rankings[0].model.name : 'No Model',
+                actualScore: rankings.length > 0 ? rankings[0].score : 0,
+                predictedScore: rankings.length > 0 ? rankings[0].score : 0,
+                rankings: rankings,
+                domainName,
+                totalBattles: rankingsResult.domain?.battleCount || rankings.reduce((sum: number, r: any) => sum + (r.battleCount || 0), 0),
+                modelsTested: rankings.length,
+                winLossMatrix: {},
+                confidenceBefore: 75,
+                confidenceAfter: 88,
+                predictionAccuracy: 70,
+              });
+              
+              const generatedInsights: Insight[] = [];
+              if (rankings.length > 0) {
+                generatedInsights.push({
+                  id: '1',
+                  title: 'Top Performer',
+                  description: `${rankings[0].model.name} leads with ${rankings[0].score} ELO score`,
+                  icon: '🏆',
+                  color: 'green',
+                });
+              }
+              const totalBattles = rankingsResult.domain?.battleCount || rankings.reduce((sum: number, r: any) => sum + (r.battleCount || 0), 0);
+              if (totalBattles > 0) {
+                generatedInsights.push({
+                  id: '2',
+                  title: 'Battle Activity',
+                  description: `${totalBattles} battles completed across ${rankings.length} models`,
+                  icon: '⚔️',
+                  color: 'blue',
+                });
+              }
+              setInsights(generatedInsights);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+        
+        const result = await response.json();
+        
+        if (response.ok && result.data) {
+          const evalData = result.data;
+          const stats = evalData.stats || {};
+          const domain = evalData.domain || {};
+          
+          // Format domain name
+          const domainName = domain.name || domainSlug
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          // Calculate user rank (assuming first model is the user's)
+          const rankings = stats.rankings || [];
+          const userRank = rankings.length > 0 ? rankings[0].rank : 1;
+          const userModel = rankings.length > 0 ? rankings[0].model : null;
+          
+          setResults({
+            userRank,
+            predictedRank: userRank + 2, // Mock prediction
+            modelName: userModel?.name || 'Model',
+            actualScore: rankings.length > 0 ? rankings[0].score : 0,
+            predictedScore: rankings.length > 0 ? rankings[0].score - 50 : 0,
+            rankings: rankings,
+            domainName,
+            totalBattles: stats.totalBattles || evalData.totalBattles || 0,
+            modelsTested: stats.rankings?.length || evalData.modelsTested || 0,
+            winLossMatrix: stats.winLossMatrix || {},
+            confidenceBefore: 75,
+            confidenceAfter: 88,
+            predictionAccuracy: 70,
+          });
+          
+          // Generate insights from the data
+          const generatedInsights: Insight[] = [];
+          if (rankings.length > 0) {
+            generatedInsights.push({
+              id: '1',
+              title: 'Top Performer',
+              description: `${rankings[0].model.name} leads with ${rankings[0].score} ELO score`,
+              icon: '🏆',
+              color: 'green',
+            });
+          }
+          if (stats.totalBattles > 0) {
+            generatedInsights.push({
+              id: '2',
+              title: 'Battle Activity',
+              description: `${stats.totalBattles} battles completed across ${evalData.modelsTested} models`,
+              icon: '⚔️',
+              color: 'blue',
+            });
+          }
+          setInsights(generatedInsights);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching evaluation results:', error);
+        // Show empty state on error
+        const domainName = domainSlug
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        setResults({
+          userRank: 0,
+          predictedRank: 0,
+          modelName: 'Error Loading',
+          actualScore: 0,
+          predictedScore: 0,
+          domainName,
+          totalBattles: 0,
+          modelsTested: 0,
+          winLossMatrix: {},
+          confidenceBefore: 0,
+          confidenceAfter: 0,
+          predictionAccuracy: 0,
+          rankings: [],
+        });
+        setInsights([]);
+        setLoading(false);
+      }
     };
-
-    const mockInsights: Insight[] = [
-      {
-        id: '1',
-        title: 'Prediction Accuracy: 70%',
-        description: 'Your evaluation results matched predictions 70% of the time, indicating reliable model performance assessment.',
-        icon: '🎯',
-        color: 'bg-blue-50',
-        metrics: [
-          { label: 'Accuracy', value: '70%' },
-          { label: 'Battles', value: '10' },
-          { label: 'Models', value: '3' },
-        ],
-      },
-      {
-        id: '2',
-        title: 'Biggest Surprise: Claude-3 outperformed in technical terminology',
-        description: 'Claude-3 Opus demonstrated exceptional performance in technical terminology and domain-specific language, exceeding initial predictions.',
-        icon: '💡',
-        color: 'bg-yellow-50',
-        metrics: [
-          { label: 'Area', value: 'Technical Terms' },
-          { label: 'Win Rate', value: '73.8%' },
-          { label: 'Improvement', value: '+15%' },
-        ],
-      },
-      {
-        id: '3',
-        title: 'Cost-Benefit: Top model is 15% more expensive but 23% more accurate',
-        description: 'The top-performing model costs 15% more than alternatives but delivers 23% better accuracy, providing excellent value for critical applications.',
-        icon: '💰',
-        color: 'bg-purple-50',
-        metrics: [
-          { label: 'Cost Increase', value: '+15%' },
-          { label: 'Accuracy Gain', value: '+23%' },
-          { label: 'Value Ratio', value: '1.53x' },
-        ],
-      },
-    ];
-
-    setResults(mockResults);
-    setInsights(mockInsights);
-    setLoading(false);
+    
+    fetchResults();
   }, [evaluationId, domainSlug]);
 
   const handleExportPDF = () => {
@@ -289,7 +351,7 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         {/* Header */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Your Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} models tested
+Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} models tested
           </h1>
           <p className="text-lg text-gray-600">
             Domain: <span className="font-semibold">{results.domainName}</span>
@@ -299,7 +361,7 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         {/* Rankings Table: Your Rank vs Predicted */}
         <Card className="mb-8">
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Model Performance</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Model Performance</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="text-center p-6 bg-gray-50 rounded-lg">
@@ -359,15 +421,19 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">{ranking.model.logo}</span>
-                            <div>
-                              <p className={`font-medium ${isUserModel ? 'text-primary-900' : 'text-gray-900'}`}>
+                            {/* Organization Logo */}
+                            <Avatar
+                              src={ranking.model.logo}
+                              alt={ranking.model.provider}
+                              size="md"
+                              shape="square"
+                              fallback={ranking.model.provider.charAt(0)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-medium ${isUserModel ? 'text-primary-900' : 'text-gray-900'} truncate`}>
                                 {ranking.model.name}
-                                {isUserModel && (
-                                  <Badge label="Your Model" variant="success" size="sm" className="ml-2" />
-                                )}
                               </p>
-                              <p className="text-sm text-gray-500">{ranking.model.provider}</p>
+                              <p className="text-sm text-gray-500 truncate">{ranking.model.provider}</p>
                             </div>
                           </div>
                         </td>

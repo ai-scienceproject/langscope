@@ -15,92 +15,38 @@ export default function RankingsIndexPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Mock domains data
-    const mockDomains: Domain[] = [
-      {
-        id: '1',
-        name: 'Code Generation',
-        slug: 'code-generation',
-        description: 'Evaluate LLMs on their ability to generate, complete, and understand code across multiple programming languages.',
-        icon: '💻',
-        modelCount: 45,
-        battleCount: 15234,
-        color: '#3B82F6',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '2',
-        name: 'Mathematical Reasoning',
-        slug: 'math-reasoning',
-        description: 'Test models on complex mathematical problems, proofs, and quantitative reasoning tasks.',
-        icon: '🔢',
-        modelCount: 38,
-        battleCount: 12456,
-        color: '#10B981',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '3',
-        name: 'Creative Writing',
-        slug: 'creative-writing',
-        description: 'Assess creative storytelling, poetry, dialogue, and narrative generation capabilities.',
-        icon: '✍️',
-        modelCount: 52,
-        battleCount: 18901,
-        color: '#8B5CF6',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '4',
-        name: 'Instruction Following',
-        slug: 'instruction-following',
-        description: 'Evaluate how well models understand and execute complex multi-step instructions.',
-        icon: '📋',
-        modelCount: 41,
-        battleCount: 14567,
-        color: '#F59E0B',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '5',
-        name: 'Question Answering',
-        slug: 'question-answering',
-        description: 'Test factual accuracy and reasoning across diverse knowledge domains.',
-        icon: '❓',
-        modelCount: 47,
-        battleCount: 16789,
-        color: '#EF4444',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '6',
-        name: 'Summarization',
-        slug: 'summarization',
-        description: 'Assess the ability to condense long documents into accurate, concise summaries.',
-        icon: '📄',
-        modelCount: 35,
-        battleCount: 11234,
-        color: '#06B6D4',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-
-    setTimeout(() => {
-      setDomains(mockDomains);
-      setLoading(false);
-    }, 500);
+    const fetchDomains = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/domains');
+        const result = await response.json();
+        
+        if (response.ok && result.data) {
+          const domainsData: Domain[] = result.data.map((domain: any) => ({
+            id: domain._id || domain.id,
+            name: domain.name,
+            slug: domain.slug,
+            description: domain.description || '',
+            icon: domain.icon || '📄',
+            modelCount: domain.modelCount || 0,
+            battleCount: domain.battleCount || 0,
+            color: '#64748b',
+            isActive: domain.isActive,
+            createdAt: new Date(domain.createdAt),
+            updatedAt: new Date(domain.updatedAt),
+          }));
+          setDomains(domainsData);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching domains:', error);
+        setDomains([]);
+        setLoading(false);
+      }
+    };
+    
+    fetchDomains();
   }, []);
 
   const filteredDomains = domains.filter(domain =>

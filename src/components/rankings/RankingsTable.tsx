@@ -187,20 +187,22 @@ const RankingsTable: React.FC<RankingsTableProps> = ({
                   {/* Model */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
+                      {/* Organization Logo */}
                       <Avatar
                         src={ranking.model.logo}
-                        alt={ranking.model.name}
+                        alt={ranking.model.provider}
                         size="md"
                         shape="square"
+                        fallback={ranking.model.provider.charAt(0)}
                       />
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <button
                           onClick={() => onModelClick?.(ranking.model.id)}
-                          className="font-medium text-gray-900 hover:text-primary-600"
+                          className="font-medium text-gray-900 hover:text-primary-600 truncate block"
                         >
                           {ranking.model.name}
                         </button>
-                        <p className="text-sm text-gray-500">{ranking.model.provider}</p>
+                        <p className="text-sm text-gray-500 truncate">{ranking.model.provider}</p>
                       </div>
                     </div>
                   </td>

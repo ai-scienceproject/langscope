@@ -3,10 +3,52 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-white text-gray-900;
-    font-feature-settings: "rlig" 1, "calt" 1;
+  * {
+    @apply border-gray-200;
   }
+  
+  body {
+    @apply bg-light-gray text-black;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Responsive typography - Source Sans Pro */
+  html {
+    font-size: 14px; /* Base mobile size */
+  }
+  
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px; /* Small tablets */
+    }
+  }
+  
+  @media (min-width: 768px) {
+    html {
+      font-size: 15px; /* Tablets */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px; /* Laptops */
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    html {
+      font-size: 16px; /* Desktops */
+    }
+  }
+  
+  @media (min-width: 1536px) {
+    html {
+      font-size: 17px; /* Large desktops */
+    }
+  }
+  
 }
 
 @layer utilities {
@@ -34,20 +76,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #474545;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #1c1b1b;
 }
 
 /* Syntax highlighting overrides */

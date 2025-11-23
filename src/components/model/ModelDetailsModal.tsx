@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '@/components/ui/Modal';
 import Tabs from '@/components/ui/Tabs';
 import { Card } from '@/components/ui/Card';
@@ -49,123 +49,139 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
   const [details, setDetails] = useState<ModelDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchModelDetails = useCallback(async () => {
+    setLoading(true);
+    
+    try {
+      // Fetch model from API
+      const url = `/api/models/${modelId}${domainSlug ? `?domain=${domainSlug}` : ''}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      
+      if (response.ok && result.data) {
+        const modelData = result.data;
+        const model: Model & { pricing?: { inputCostPer1MTokens: number; outputCostPer1MTokens: number }; strengths?: string[]; weaknesses?: string[] } = {
+          id: modelData.id,
+          name: modelData.name,
+          slug: modelData.slug,
+          provider: modelData.provider,
+          logo: modelData.logo,
+          description: modelData.description,
+          type: modelData.type,
+          contextLength: modelData.contextLength,
+          costPer1MTokens: modelData.pricing?.inputCostPer1MTokens || modelData.costPer1MTokens || 0,
+          verified: modelData.verified,
+          releaseDate: new Date(modelData.releaseDate),
+          createdAt: new Date(modelData.createdAt),
+          updatedAt: new Date(modelData.updatedAt),
+          pricing: modelData.pricing,
+          strengths: modelData.strengths,
+          weaknesses: modelData.weaknesses,
+        };
+        
+        const stats: ModelStats = modelData.stats ? {
+          totalBattles: modelData.stats.totalBattles,
+          wins: modelData.stats.wins,
+          losses: modelData.stats.losses,
+          ties: modelData.stats.ties,
+          winRate: modelData.stats.winRate,
+          averageScore: modelData.stats.averageScore,
+          eloRating: modelData.stats.eloRating,
+          domainBreakdown: [], // Can be calculated from rankings if needed
+          recentTrend: 'up',
+        } : (modelData.ranking ? {
+          totalBattles: modelData.ranking.totalBattles,
+          wins: modelData.ranking.wins,
+          losses: modelData.ranking.losses,
+          ties: modelData.ranking.ties,
+          winRate: modelData.ranking.winRate,
+          averageScore: modelData.ranking.eloScore,
+          eloRating: modelData.ranking.eloScore,
+          domainBreakdown: [],
+          recentTrend: 'up',
+        } : {
+          totalBattles: 0,
+          wins: 0,
+          losses: 0,
+          ties: 0,
+          winRate: 0,
+          averageScore: 0,
+          eloRating: 0,
+          domainBreakdown: [],
+          recentTrend: 'stable',
+        });
+        
+        // Transform battle history from API
+        const battles: BattleHistory[] = (modelData.battleHistory || []).map((battle: any) => ({
+          id: battle.id,
+          opponentId: battle.opponent.id,
+          opponentName: battle.opponent.name,
+          prompt: '', // Not available in battle history
+          winner: battle.winner === 'MODEL_A' ? 'A' : battle.winner === 'MODEL_B' ? 'B' : 'Tie',
+          votes: 0, // Not available in battle history
+          completedAt: new Date(battle.createdAt),
+        }));
+        
+        setDetails({
+          model,
+          stats,
+          battles,
+          strengths: modelData.strengths || [],
+          weaknesses: modelData.weaknesses || [],
+        });
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Error fetching model details:', error);
+      setLoading(false);
+      return;
+    }
+    
+    // If we get here, there was an error - show empty state
+    setDetails({
+      model: {
+        id: modelId,
+        name: 'Model Not Found',
+        slug: modelId,
+        provider: 'Unknown',
+        logo: '🤖',
+        description: 'Model data could not be loaded',
+        type: 'api-only',
+        contextLength: 0,
+        costPer1MTokens: 0,
+        verified: false,
+        releaseDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      stats: {
+        totalBattles: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        winRate: 0,
+        averageScore: 0,
+        eloRating: 0,
+        domainBreakdown: [],
+        recentTrend: 'stable',
+      },
+      battles: [],
+      strengths: [],
+      weaknesses: [],
+    });
+    setLoading(false);
+  }, [modelId, domainSlug]);
+
   useEffect(() => {
     if (isOpen && modelId) {
       fetchModelDetails();
+    } else if (!isOpen) {
+      // Reset state when modal closes
+      setDetails(null);
+      setLoading(true);
     }
-  }, [isOpen, modelId, domainSlug]);
-
-  const fetchModelDetails = async () => {
-    setLoading(true);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Mock data
-    const mockModel: Model = {
-      id: modelId,
-      name: modelId.includes('gpt-4') ? 'GPT-4 Turbo' :
-            modelId.includes('claude-3-opus') ? 'Claude 3 Opus' :
-            modelId.includes('gemini') ? 'Gemini Pro' :
-            modelId.includes('gpt-3.5') ? 'GPT-3.5 Turbo' :
-            modelId.includes('claude-3-sonnet') ? 'Claude 3 Sonnet' :
-            'Model Name',
-      slug: modelId,
-      provider: modelId.includes('gpt') ? 'OpenAI' :
-               modelId.includes('claude') ? 'Anthropic' :
-               modelId.includes('gemini') ? 'Google' :
-               'Provider',
-      logo: '🤖',
-      description: 'Advanced language model with state-of-the-art performance',
-      type: 'api-only',
-      contextLength: modelId.includes('claude-3-opus') ? 200000 : 128000,
-      costPer1MTokens: modelId.includes('gpt-4') ? 10.0 :
-                       modelId.includes('claude-3-opus') ? 15.0 :
-                       modelId.includes('gemini') ? 7.0 :
-                       modelId.includes('gpt-3.5') ? 0.5 :
-                       modelId.includes('claude-3-sonnet') ? 3.0 : 5.0,
-      verified: true,
-      releaseDate: new Date('2024-01-01'),
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date(),
-    };
-
-    const mockStats: ModelStats = {
-      totalBattles: 155,
-      wins: 117,
-      losses: 30,
-      ties: 8,
-      winRate: 75.5,
-      averageScore: 1450,
-      eloRating: 1450,
-      domainBreakdown: [
-        { domainId: '1', domainName: 'Code Generation', battles: 45, winRate: 78.2, elo: 1480 },
-        { domainId: '2', domainName: 'Mathematical Reasoning', battles: 38, winRate: 72.5, elo: 1420 },
-        { domainId: '3', domainName: 'Creative Writing', battles: 42, winRate: 76.8, elo: 1460 },
-        { domainId: '4', domainName: 'Question Answering', battles: 30, winRate: 74.3, elo: 1440 },
-      ],
-      recentTrend: 'up',
-    };
-
-    const mockBattles: BattleHistory[] = [
-      {
-        id: '1',
-        opponentId: 'claude-3-opus',
-        opponentName: 'Claude 3 Opus',
-        prompt: 'Write a Python function to calculate factorial',
-        winner: 'A',
-        votes: 45,
-        completedAt: new Date(Date.now() - 3600000),
-      },
-      {
-        id: '2',
-        opponentId: 'gemini-pro',
-        opponentName: 'Gemini Pro',
-        prompt: 'Explain quantum entanglement',
-        winner: 'B',
-        votes: 42,
-        completedAt: new Date(Date.now() - 7200000),
-      },
-      {
-        id: '3',
-        opponentId: 'gpt-3.5-turbo',
-        opponentName: 'GPT-3.5 Turbo',
-        prompt: 'Create a REST API endpoint',
-        winner: 'B',
-        votes: 52,
-        completedAt: new Date(Date.now() - 10800000),
-      },
-    ];
-
-    const mockStrengths = [
-      'Excellent code generation and debugging',
-      'Strong reasoning capabilities',
-      'Large context window for complex tasks',
-      'High accuracy in technical domains',
-    ];
-
-    const mockWeaknesses = [
-      'Higher latency compared to smaller models',
-      'Cost can be prohibitive for high-volume use',
-      'Occasional verbosity in responses',
-    ];
-
-    const mockLatency = {
-      average: 1250,
-      p50: 980,
-      p95: 2100,
-      p99: 3200,
-    };
-
-    setDetails({
-      model: mockModel,
-      stats: mockStats,
-      battles: mockBattles,
-      strengths: mockStrengths,
-      weaknesses: mockWeaknesses,
-      latency: mockLatency,
-    });
-    setLoading(false);
-  };
+  }, [isOpen, modelId, fetchModelDetails]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -195,9 +211,10 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
             <div className="flex items-center gap-3">
               <Avatar
                 src={details.model.logo}
-                alt={details.model.name}
+                alt={details.model.provider}
                 size="md"
                 shape="square"
+                fallback={details.model.provider.charAt(0)}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -432,7 +449,7 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
                         <p className="text-xs text-gray-500">Per 1M tokens</p>
                       </div>
                       <p className="text-lg font-bold text-gray-900">
-                        ${details.model.costPer1MTokens.toFixed(2)}
+                        ${((details.model as any).pricing?.inputCostPer1MTokens ?? details.model.costPer1MTokens ?? 0).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -441,9 +458,12 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
                         <p className="text-xs text-gray-500">Per 1M tokens</p>
                       </div>
                       <p className="text-lg font-bold text-gray-900">
-                        ${(details.model.costPer1MTokens * 1.2).toFixed(2)}
+                        ${((details.model as any).pricing?.outputCostPer1MTokens ?? (details.model.costPer1MTokens * 1.2)).toFixed(2)}
                       </p>
                     </div>
+                    {((details.model as any).pricing?.inputCostPer1MTokens === 0 && (details.model as any).pricing?.outputCostPer1MTokens === 0) && (
+                      <p className="text-xs text-blue-600 mt-2 text-center">Open-source model - no API costs</p>
+                    )}
                   </div>
                 </Card>
 
@@ -477,6 +497,9 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
                         ${details.model.costPer1MTokens.toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">for 1M input tokens</p>
+                      {((details.model as any).pricing?.inputCostPer1MTokens === 0 && (details.model as any).pricing?.outputCostPer1MTokens === 0) && (
+                        <p className="text-xs text-blue-600 mt-1">Open-source model - no API costs</p>
+                      )}
                     </div>
                   </div>
                 </Card>

@@ -1,143 +1,153 @@
 # Database Setup Guide
 
 ## Prerequisites
-- PostgreSQL 14+ installed
-- Node.js 18+ installed
+- MongoDB 6.0+ installed (or use MongoDB Atlas)
+- Node.js 20+ installed
 - Access to database
 
-## Option 1: Using Raw SQL
+## Option 1: Local MongoDB
 
-### 1. Create Database
+### 1. Install MongoDB
 ```bash
-psql -U postgres
-CREATE DATABASE langscope;
-\c langscope
+# macOS (using Homebrew)
+brew tap mongodb/brew
+brew install mongodb-community
+
+# Ubuntu/Debian
+sudo apt-get install mongodb
+
+# Windows
+# Download from https://www.mongodb.com/try/download/community
 ```
 
-### 2. Run Schema
+### 2. Start MongoDB
 ```bash
-psql -U postgres -d langscope -f database/schema.sql
+# macOS
+brew services start mongodb-community
+
+# Linux
+sudo systemctl start mongod
+
+# Windows
+# Start MongoDB service from Services
 ```
 
-### 3. Seed Data (Optional)
-```bash
-psql -U postgres -d langscope -f database/seed.sql
+### 3. Create Database
+MongoDB creates databases automatically when you first write to them. No need to create manually.
+
+## Option 2: MongoDB Atlas (Cloud)
+
+1. Sign up at https://www.mongodb.com/cloud/atlas
+2. Create a free cluster
+3. Get your connection string
+4. Add it to `.env` as `DATABASE_URL`
+
+## Database Setup
+
+This application uses MongoDB with Mongoose ODM for database operations.
+
+### 1. Install Dependencies
+
+Dependencies are already installed:
+- `mongoose` - MongoDB ODM
+- `@types/mongoose` - TypeScript types
+
+### 2. Configure Connection
+
+Add to `.env`:
+```env
+DATABASE_URL="mongodb://localhost:27017/langscope?retryWrites=true&w=majority"
 ```
 
-## Option 2: Using Prisma (Recommended)
-
-### 1. Install Prisma
-```bash
-npm install -D prisma
-npm install @prisma/client
+For MongoDB Atlas:
+```env
+DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/langscope?retryWrites=true&w=majority"
 ```
 
-### 2. Initialize Database
-```bash
-# Generate Prisma Client
-npx prisma generate
+### 3. Database Connection
 
-# Create database and run migrations
-npx prisma db push
+The connection is handled automatically in `src/lib/db/connect.ts`. It uses connection pooling and caching for optimal performance in Next.js.
 
-# Or create migration
-npx prisma migrate dev --name init
-```
+### 4. Using Models
 
-### 3. Seed Database
-Create `prisma/seed.ts`:
+Import models from `src/lib/db/models`:
 ```typescript
-import { PrismaClient } from '@prisma/client';
+import { Domain } from '@/lib/db/models';
+import connectDB from '@/lib/db/connect';
 
-const prisma = new PrismaClient();
-
-async function main() {
-  // Add seed data
-  await prisma.domain.createMany({
-    data: [
-      {
-        name: 'Code Generation',
-        slug: 'code-generation',
-        description: 'Generate, complete, and debug code',
-        icon: '💻',
-        featured: true,
-        confidenceScore: 92.5,
-      },
-      // ... more domains
-    ],
-  });
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// In API routes or server components
+await connectDB();
+const domains = await Domain.find({ isActive: true });
 ```
 
-Run seed:
-```bash
-npx prisma db seed
-```
+### 5. Using Services
 
-### 4. Studio (Database GUI)
-```bash
-npx prisma studio
+Use the service layer for common operations:
+```typescript
+import { getDomains } from '@/lib/db/services/domainService';
+
+const domains = await getDomains();
 ```
 
 ## Connection String Format
 
 Add to `.env`:
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/langscope?schema=public"
+# Local MongoDB
+DATABASE_URL="mongodb://localhost:27017/langscope?retryWrites=true&w=majority"
+
+# MongoDB Atlas
+DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/langscope?retryWrites=true&w=majority"
 ```
 
 ## Backup Database
 
 ```bash
-pg_dump -U postgres langscope > backup.sql
+# Using mongodump
+mongodump --uri="mongodb://localhost:27017/langscope" --out=./backup
+
+# MongoDB Atlas
+# Use the Atlas UI to create backups
 ```
 
 ## Restore Database
 
 ```bash
-psql -U postgres -d langscope < backup.sql
+# Using mongorestore
+mongorestore --uri="mongodb://localhost:27017/langscope" ./backup/langscope
 ```
 
 ## Common Commands
 
-### Check tables
-```sql
-\dt
+### Check collections
+```javascript
+// In MongoDB shell
+use langscope
+show collections
 ```
 
-### Describe table
-```sql
-\d table_name
+### Count documents
+```javascript
+db.domains.countDocuments()
 ```
 
-### Count records
-```sql
-SELECT COUNT(*) FROM table_name;
+### Query documents
+```javascript
+db.domains.find({ isActive: true })
 ```
 
-## Troubleshooting
+## Indexes
 
-### Reset database
+Prisma automatically creates indexes based on `@@index` directives in the schema. For custom indexes:
+
 ```bash
-npx prisma migrate reset
+# Create index via MongoDB shell
+db.domains.createIndex({ slug: 1 }, { unique: true })
 ```
 
-### Force push schema (development only)
-```bash
-npx prisma db push --force-reset
-```
+## Migration Notes
 
-### View migrations
-```bash
-npx prisma migrate status
-```
-
+- MongoDB doesn't use traditional migrations like SQL databases
+- Use `prisma db push` to sync schema changes
+- For production, use `prisma migrate` (creates migration history)
+- Always backup before schema changes

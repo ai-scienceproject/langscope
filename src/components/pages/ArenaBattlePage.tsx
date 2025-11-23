@@ -17,7 +17,7 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
   const [submitting, setSubmitting] = useState(false);
   const [responseA, setResponseA] = useState('');
   const [responseB, setResponseB] = useState('');
-  const [evaluationId] = useState(() => `eval-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [evaluationId, setEvaluationId] = useState<string | null>(null);
   const [criteria, setCriteria] = useState({
     accuracy: false,
     clarity: false,
@@ -25,118 +25,42 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
   });
   const [isPaused, setIsPaused] = useState(false);
   const [testCaseContext, setTestCaseContext] = useState('');
-  const [standings, setStandings] = useState<ModelStanding[]>([
-    {
-      modelId: 'gpt-4-turbo',
-      model: {
-        id: 'gpt-4-turbo',
-        name: 'GPT-4 Turbo',
-        slug: 'gpt-4-turbo',
-        provider: 'OpenAI',
-        logo: '🤖',
-        description: 'GPT-4 Turbo by OpenAI',
-        type: 'api-only',
-        contextLength: 128000,
-        costPer1MTokens: 10.0,
-        verified: true,
-        releaseDate: new Date('2024-01-01'),
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-      },
-      rank: 1,
-      score: 1450,
-      battles: 155,
-      change: 2,
-    },
-    {
-      modelId: 'claude-3-opus',
-      model: {
-        id: 'claude-3-opus',
-        name: 'Claude 3 Opus',
-        slug: 'claude-3-opus',
-        provider: 'Anthropic',
-        logo: '🤖',
-        description: 'Claude 3 Opus by Anthropic',
-        type: 'api-only',
-        contextLength: 200000,
-        costPer1MTokens: 15.0,
-        verified: true,
-        releaseDate: new Date('2024-01-01'),
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-      },
-      rank: 2,
-      score: 1420,
-      battles: 153,
-      change: -1,
-    },
-    {
-      modelId: 'gemini-pro',
-      model: {
-        id: 'gemini-pro',
-        name: 'Gemini Pro',
-        slug: 'gemini-pro',
-        provider: 'Google',
-        logo: '🤖',
-        description: 'Gemini Pro by Google',
-        type: 'api-only',
-        contextLength: 128000,
-        costPer1MTokens: 7.0,
-        verified: true,
-        releaseDate: new Date('2024-01-01'),
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-      },
-      rank: 3,
-      score: 1380,
-      battles: 150,
-      change: 1,
-    },
-    {
-      modelId: 'gpt-3.5-turbo',
-      model: {
-        id: 'gpt-3.5-turbo',
-        name: 'GPT-3.5 Turbo',
-        slug: 'gpt-3.5-turbo',
-        provider: 'OpenAI',
-        logo: '🤖',
-        description: 'GPT-3.5 Turbo by OpenAI',
-        type: 'api-only',
-        contextLength: 16000,
-        costPer1MTokens: 0.5,
-        verified: true,
-        releaseDate: new Date('2023-01-01'),
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date(),
-      },
-      rank: 4,
-      score: 1350,
-      battles: 152,
-      change: 0,
-    },
-    {
-      modelId: 'claude-3-sonnet',
-      model: {
-        id: 'claude-3-sonnet',
-        name: 'Claude 3 Sonnet',
-        slug: 'claude-3-sonnet',
-        provider: 'Anthropic',
-        logo: '🤖',
-        description: 'Claude 3 Sonnet by Anthropic',
-        type: 'api-only',
-        contextLength: 200000,
-        costPer1MTokens: 3.0,
-        verified: true,
-        releaseDate: new Date('2024-01-01'),
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-      },
-      rank: 5,
-      score: 1320,
-      battles: 150,
-      change: -2,
-    },
-  ]);
+  const [standings, setStandings] = useState<ModelStanding[]>([]);
+  const [currentModelA, setCurrentModelA] = useState<ModelStanding | null>(null);
+  const [currentModelB, setCurrentModelB] = useState<ModelStanding | null>(null);
+  
+  useEffect(() => {
+    const fetchStandings = async () => {
+      try {
+        const response = await fetch(`/api/arena/${domainSlug}/standings`);
+        const result = await response.json();
+        
+        if (response.ok && result.data) {
+          setStandings(result.data);
+          
+          // Select two random models for the battle (only if we have at least 2 models)
+          if (result.data.length >= 2) {
+            const shuffled = [...result.data].sort(() => Math.random() - 0.5);
+            setCurrentModelA(shuffled[0] || null);
+            setCurrentModelB(shuffled[1] || shuffled[0] || null);
+          } else if (result.data.length === 1) {
+            // If only one model, use it for both (though this shouldn't happen in practice)
+            setCurrentModelA(result.data[0] || null);
+            setCurrentModelB(result.data[0] || null);
+          }
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching standings:', error);
+        setStandings([]);
+        return;
+      }
+    };
+    
+    if (domainSlug) {
+      fetchStandings();
+    }
+  }, [domainSlug]);
 
   useEffect(() => {
     // Mock battle data
@@ -149,27 +73,78 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     setTestCaseContext(contexts[battleIndex % contexts.length]);
     setResponseA('Model A\'s response: Here\'s a recursive approach using Python...\n\nThis implements the solution efficiently.');
     setResponseB('Model B\'s response: Here\'s an iterative approach...\n\nThis avoids potential stack overflow issues.');
-  }, [battleIndex]);
+    
+    // Select new models for each battle when battleIndex changes
+    if (standings.length >= 2) {
+      const shuffled = [...standings].sort(() => Math.random() - 0.5);
+      setCurrentModelA(shuffled[0] || null);
+      setCurrentModelB(shuffled[1] || shuffled[0] || null);
+    }
+  }, [battleIndex, standings]);
 
   const handleSubmit = async () => {
-    if (!selectedVote) return;
+    if (!selectedVote || !currentModelA || !currentModelB) return;
     
     setSubmitting(true);
+    
+    try {
+      // Save battle to MongoDB
+      const battleResponse = await fetch('/api/battles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          domainSlug,
+          modelAId: currentModelA.modelId,
+          modelBId: currentModelB.modelId,
+          responseA: responseA || 'Response A',
+          responseB: responseB || 'Response B',
+          winner: selectedVote,
+          testCaseTitle: testCaseContext || 'Arena Battle',
+          evaluationId: evaluationId || undefined,
+        }),
+      });
+
+      if (battleResponse.ok) {
+        const battleResult = await battleResponse.json();
+        // Update evaluationId with the actual MongoDB ID from the first battle
+        if (battleResult.evaluationId && !evaluationId) {
+          setEvaluationId(battleResult.evaluationId);
+        }
+      } else {
+        console.error('Failed to save battle:', await battleResponse.json());
+      }
+    } catch (error) {
+      console.error('Error saving battle:', error);
+    }
+    
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Update standings (simulate score changes)
+    // Update standings (simulate score changes) and select new models
     setStandings(prevStandings => {
+      // Guard against empty standings array
+      if (!prevStandings || prevStandings.length === 0) {
+        return prevStandings;
+      }
+      
       const updated = [...prevStandings];
       // Randomly update a model's score to simulate real-time changes
       const randomIndex = Math.floor(Math.random() * updated.length);
+      
+      // Ensure the item exists before accessing its properties
+      if (!updated[randomIndex]) {
+        return prevStandings;
+      }
+      
       updated[randomIndex] = {
         ...updated[randomIndex],
-        score: updated[randomIndex].score + Math.floor(Math.random() * 10 - 5),
-        battles: updated[randomIndex].battles + 1,
-        change: updated[randomIndex].change + (Math.random() > 0.5 ? 1 : -1),
+        score: (updated[randomIndex].score || 0) + Math.floor(Math.random() * 10 - 5),
+        battles: (updated[randomIndex].battles || 0) + 1,
+        change: (updated[randomIndex].change || 0) + (Math.random() > 0.5 ? 1 : -1),
       };
       // Re-sort by score
-      return updated.sort((a, b) => b.score - a.score).map((s, i) => ({ ...s, rank: i + 1 }));
+      return updated.sort((a, b) => (b.score || 0) - (a.score || 0)).map((s, i) => ({ ...s, rank: i + 1 }));
     });
     
     if (battleIndex < totalBattles) {
@@ -182,7 +157,9 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
       });
     } else {
       // Redirect to Results Dashboard when all battles are complete
-      window.location.href = `/results/${evaluationId}?domain=${domainSlug}`;
+      // Use the actual evaluationId from MongoDB, or fall back to the temporary one
+      const finalEvalId = evaluationId || `eval-${Date.now()}`;
+      window.location.href = `/results/${finalEvalId}?domain=${domainSlug}`;
     }
     
     setSubmitting(false);
@@ -194,16 +171,16 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
       sidebarType="leaderboard"
       standings={standings}
     >
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         {/* Top Bar: Battle X of Y | Domain [Pause] */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-lg font-semibold text-gray-900">
+        <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 xs:gap-4">
+            <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-4">
+              <span className="text-base sm:text-lg font-semibold text-black">
                 Battle {battleIndex} of {totalBattles}
               </span>
-              <span className="text-gray-400">|</span>
-              <span className="text-lg font-medium text-gray-700 capitalize">
+              <span className="hidden xs:inline text-gray-400">|</span>
+              <span className="text-sm sm:text-base md:text-lg font-medium text-dark-gray capitalize">
                 {domainSlug.split('-').join(' ')}
               </span>
             </div>
@@ -211,6 +188,7 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
               variant="outline"
               size="sm"
               onClick={() => setIsPaused(!isPaused)}
+              className="w-full xs:w-auto"
             >
               {isPaused ? 'Resume' : 'Pause'}
             </Button>
@@ -232,7 +210,7 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
         </Card>
 
         {/* Responses: Response 1 | Response 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
           {/* Response 1 */}
           <Card 
             className={`cursor-pointer transition-all ${

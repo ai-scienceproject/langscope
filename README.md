@@ -13,8 +13,9 @@ Battle-tested LLM rankings with blockchain-verified immutability.
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS
-- **Backend:** Node.js, Express, PostgreSQL
+- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend:** Node.js, Express, MongoDB
+- **Database:** MongoDB with Mongoose ODM
 - **Real-time:** Socket.io
 - **Blockchain:** Arweave, IPFS, Polygon
 - **Charts:** Recharts
@@ -25,8 +26,8 @@ Battle-tested LLM rankings with blockchain-verified immutability.
 
 ### Prerequisites
 
-- Node.js 18+
-- PostgreSQL 14+
+- Node.js 20+
+- MongoDB 6.0+ (or MongoDB Atlas)
 - pnpm/npm/yarn
 
 ### Installation
@@ -41,10 +42,12 @@ cp .env.example .env
 # Edit .env with your configuration
 nano .env
 
-# Run database migrations
-npm run db:migrate
+# Set up MongoDB connection
+# Add DATABASE_URL to .env file:
+# DATABASE_URL="mongodb://localhost:27017/langscope"
+# See MONGODB_SETUP.md for detailed setup instructions
 
-# Seed initial data (optional)
+# Seed the database with sample data (optional)
 npm run db:seed
 
 # Start development server

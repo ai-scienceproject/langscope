@@ -23,7 +23,7 @@ export interface Model {
   name: string;
   slug: string;
   provider: string;
-  logo: string;
+  logo: string; // Organization logo
   description: string;
   type: 'open-source' | 'proprietary' | 'api-only';
   contextLength: number;

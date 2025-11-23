@@ -40,87 +40,72 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
     sortBy: 'elo',
   });
 
-  const fetchMockData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Mock domain data
-    const mockDomain: Domain = {
-      id: '1',
-      name: domainSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-      slug: domainSlug,
-      description: `Evaluate models on their ${domainSlug.replace('-', ' ')} capabilities`,
-      icon: domainSlug.includes('code') ? '💻' : domainSlug.includes('math') ? '🔢' : 
-            domainSlug.includes('creative') ? '✍️' : domainSlug.includes('instruction') ? '📋' :
-            domainSlug.includes('question') ? '❓' : '📄',
-      modelCount: 45,
-      battleCount: 15234,
-      color: '#3B82F6',
-      isActive: true,
-      confidenceScore: 94,
-      transferDomains: ['instruction-following', 'question-answering'],
-      transferDomainSimilarities: {
-        'instruction-following': 92,
-        'question-answering': 78,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    // Mock model data
-    const mockModels = [
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', logo: '🤖', cost: 10.0 },
-      { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', logo: '🤖', cost: 15.0 },
-      { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', logo: '🤖', cost: 7.0 },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI', logo: '🤖', cost: 0.5 },
-      { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', logo: '🤖', cost: 3.0 },
-      { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral AI', logo: '🤖', cost: 8.0 },
-      { id: 'llama-3-70b', name: 'Llama 3 70B', provider: 'Meta', logo: '🤖', cost: 0.0 },
-      { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', logo: '🤖', cost: 0.25 },
-      { id: 'gemini-flash', name: 'Gemini Flash', provider: 'Google', logo: '🤖', cost: 0.35 },
-      { id: 'llama-3-8b', name: 'Llama 3 8B', provider: 'Meta', logo: '🤖', cost: 0.0 },
-    ];
-    
-    // Mock rankings data with proper structure
-    const mockRankings: ModelRanking[] = mockModels.map((modelData, index) => ({
-      rank: index + 1,
-      previousRank: index + 1 + (Math.random() > 0.5 ? 1 : -1),
-      model: {
-        id: modelData.id,
-        name: modelData.name,
-        slug: modelData.id,
-        provider: modelData.provider,
-        logo: modelData.logo,
-        description: `${modelData.name} by ${modelData.provider}`,
-        type: modelData.cost === 0 ? 'open-source' : 'proprietary' as 'open-source' | 'proprietary' | 'api-only',
-        contextLength: 128000,
-        costPer1MTokens: modelData.cost,
-        verified: true,
-        releaseDate: new Date('2024-01-01'),
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-      },
-      score: 1400 - (index * 30) - Math.floor(Math.random() * 20),
-      uncertainty: 15 + Math.floor(Math.random() * 10),
-      battleCount: 1500 - (index * 100) + Math.floor(Math.random() * 200),
-      winRate: 70 - (index * 2) + Math.random() * 5,
-      domain: mockDomain,
-      lastUpdated: new Date(Date.now() - index * 3600000),
-    }));
-    
-    setDomain(mockDomain);
-    setRankings(mockRankings);
-    setTotalPages(1);
-    setLoading(false);
+    try {
+      // Fetch domain and rankings from API
+      const rankingsResponse = await fetch(`/api/rankings/${domainSlug}`);
+      
+      // Check if response is ok before trying to parse JSON
+      if (!rankingsResponse.ok) {
+        let errorMessage = 'Failed to fetch rankings';
+        try {
+          const errorData = await rankingsResponse.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('Rankings API error:', errorData);
+        } catch {
+          // If JSON parsing fails, use the status text
+          errorMessage = rankingsResponse.statusText || errorMessage;
+          console.error('Rankings API error (non-JSON):', rankingsResponse.status, rankingsResponse.statusText);
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const rankingsResult = await rankingsResponse.json();
+      
+      if (!rankingsResult.domain || !rankingsResult.data) {
+        console.error('Invalid rankings response:', rankingsResult);
+        throw new Error('Invalid response from rankings API');
+      }
+      
+      const domainData = rankingsResult.domain;
+      const rankingsData = rankingsResult.data || [];
+      
+      // Transform domain
+      const transformedDomain: Domain = {
+        id: domainData.id,
+        name: domainData.name,
+        slug: domainData.slug,
+        description: domainData.description || '',
+        icon: domainData.icon || '📄',
+        modelCount: domainData.modelCount || 0,
+        battleCount: domainData.battleCount || 0,
+        color: '#64748b',
+        isActive: domainData.isActive,
+        confidenceScore: 85,
+        createdAt: new Date(domainData.createdAt),
+        updatedAt: new Date(domainData.updatedAt),
+      };
+      
+      setDomain(transformedDomain);
+      setRankings(rankingsData);
+      setTotalPages(1);
+      setLoading(false);
+      return;
+    } catch (error) {
+      console.error('Error fetching rankings:', error);
+      setDomain(null);
+      setRankings([]);
+      setLoading(false);
+    }
   }, [domainSlug]);
 
   useEffect(() => {
     if (domainSlug) {
-      fetchMockData();
+      fetchData();
     }
-  }, [domainSlug, fetchMockData]);
+  }, [domainSlug, fetchData]);
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
