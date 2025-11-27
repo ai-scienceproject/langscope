@@ -41,7 +41,9 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/');
+      // Get redirect URL from query params, default to home
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/';
+      router.push(redirectUrl);
     } catch (err: any) {
       setError(err.message || 'Failed to login. Please check your credentials.');
     } finally {

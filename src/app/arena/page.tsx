@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import DomainCard from '@/components/domain/DomainCard';
 import SearchBar from '@/components/ui/SearchBar';
@@ -12,12 +13,20 @@ import { Domain } from '@/types';
 
 export default function ArenaIndexPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showJudgeModal, setShowJudgeModal] = useState(false);
   const [selectedDomainSlug, setSelectedDomainSlug] = useState<string | null>(null);
   const domainsFetchedRef = useRef(false);
+
+  // Redirect to login if not authenticated (client-side check as backup)
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login?redirect=/arena');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
     // Prevent duplicate fetches (React 18 Strict Mode runs effects twice in development)
@@ -86,6 +95,17 @@ export default function ArenaIndexPage() {
     
     router.push(`/arena/${selectedDomainSlug}?${params.toString()}`);
   };
+
+  // Don't render content if still checking auth or not authenticated
+  if (authLoading || !isAuthenticated) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Skeleton variant="rectangular" className="w-full max-w-md h-64" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

@@ -35,7 +35,9 @@ export default function RankingsIndexPage() {
             createdAt: new Date(domain.createdAt),
             updatedAt: new Date(domain.updatedAt),
           }));
-          setDomains(domainsData);
+          // Sort domains by battle count in descending order
+          const sortedDomains = domainsData.sort((a, b) => (b.battleCount || 0) - (a.battleCount || 0));
+          setDomains(sortedDomains);
           setLoading(false);
           return;
         }

@@ -40,7 +40,9 @@ export async function GET(request: Request) {
         return NextResponse.redirect(loginUrl.toString())
       }
 
-      // Success - redirect to home
+      // Success - check for redirect parameter in cookies or default to home
+      // Note: OAuth redirects don't preserve query params, so we default to home
+      // Users can navigate to /arena after login
       return NextResponse.redirect(`${origin}/`)
     } catch (err) {
       console.error('Unexpected error in OAuth callback:', err)

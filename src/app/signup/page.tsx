@@ -19,7 +19,9 @@ export default function SignupPage() {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      // Get redirect URL from query params, default to home
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/';
+      router.push(redirectUrl);
     }
   }, [isAuthenticated, router]);
 
@@ -42,7 +44,9 @@ export default function SignupPage() {
 
     try {
       await signup({ name, email, password });
-      router.push('/');
+      // Get redirect URL from query params, default to home
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/';
+      router.push(redirectUrl);
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {

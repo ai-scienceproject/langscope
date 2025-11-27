@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import RankingsTable from '@/components/rankings/RankingsTable';
 import ModelDetailsModal from '@/components/model/ModelDetailsModal';
@@ -18,6 +19,7 @@ interface RankingsPageProps {
 }
 
 const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
+  const { isAuthenticated } = useAuth();
   const [domain, setDomain] = useState<Domain | null>(null);
   const [rankings, setRankings] = useState<ModelRanking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,6 +274,11 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
             variant="primary"
             size="lg"
             onClick={() => {
+              if (!isAuthenticated) {
+                // Redirect to login with redirect parameter to come back here
+                router.push(`/login?redirect=/rankings/${domainSlug}`);
+                return;
+              }
               setShowJudgeModal(true);
             }}
           >

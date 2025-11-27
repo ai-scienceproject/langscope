@@ -78,9 +78,11 @@ export async function updateSession(request: NextRequest) {
   
   // Require authentication for protected routes
   if (!user && (isProtectedRoute || isProtectedApiRoute) && !isPublicRoute) {
-    // No user, redirect to login page
+    // No user, redirect to login page with redirect parameter
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    // Preserve the intended destination
+    url.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search)
     return NextResponse.redirect(url)
   }
 
