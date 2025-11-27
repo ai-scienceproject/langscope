@@ -5,7 +5,7 @@ This guide will help you set up the repository on GitHub and configure CI/CD.
 ## Prerequisites
 
 - Git installed on your machine
-- GitHub account with access to the `scienceproject-ai` organization
+- GitHub account with access to the `ai-scienceproject` organization
 - Node.js 20+ installed
 
 ## Step 1: Initialize Git Repository
@@ -23,7 +23,7 @@ git commit -m "Initial commit: Langscope LLM Evaluation Platform"
 
 ## Step 2: Create Repository on GitHub
 
-1. Go to https://github.com/orgs/scienceproject-ai/repositories
+1. Go to https://github.com/orgs/ai-scienceproject/repositories
 2. Click "New repository"
 3. Repository name: `langscope` (or your preferred name)
 4. Description: "LLM Evaluation Platform with blockchain verification"
@@ -35,10 +35,10 @@ git commit -m "Initial commit: Langscope LLM Evaluation Platform"
 
 ```bash
 # Add remote origin (replace YOUR_REPO_NAME if different)
-git remote add origin https://github.com/scienceproject-ai/langscope.git
+git remote add origin https://github.com/ai-scienceproject/langscope.git
 
 # Or if using SSH:
-# git remote add origin git@github.com:scienceproject-ai/langscope.git
+# git remote add origin git@github.com:ai-scienceproject/langscope.git
 
 # Verify remote
 git remote -v
@@ -135,7 +135,7 @@ Runs on:
 - Check build logs in GitHub Actions
 
 ### Permission denied
-- Ensure you have write access to the `scienceproject-ai` organization
+- Ensure you have write access to the `ai-scienceproject` organization
 - Check your GitHub authentication
 
 ## Next Steps

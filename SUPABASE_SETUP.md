@@ -29,19 +29,79 @@ Supabase Auth has been integrated into your application. Here's what was set up:
 ### 2. Get Your API Keys
 
 1. In your Supabase project dashboard, go to **Settings** → **API**
-2. Copy the following:
-   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-   - **anon/public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. You'll see two sections:
+   - **"Publishable and secret API keys"** (new format)
+   - **"Legacy anon, service_role API keys"** (old format - still works)
+
+**Option A: Use New API Keys (Recommended)**
+
+If you see **"Create API keys"** or **"Create new API keys"**:
+
+1. Click **"Create new API keys"** (if you haven't created any yet)
+2. You'll get:
+   - **Publishable key** → This is your `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **Secret key** → This is your `SUPABASE_SERVICE_ROLE_KEY`
+3. Copy both keys
+
+**Option B: Use Legacy Keys (If Available)**
+
+If you see **"Legacy anon, service_role API keys"**:
+
+1. Look for **"anon public"** key → This is your `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. Look for **"service_role"** key → This is your `SUPABASE_SERVICE_ROLE_KEY`
+3. Copy both keys
+
+**Get Project URL:**
+
+- Look for **"Project URL"** or **"URL"** field (usually at the top of the API page)
+- Format: `https://xxxxxxxxxxxxx.supabase.co`
+- This is your `NEXT_PUBLIC_SUPABASE_URL`
+
+**Summary:**
+- `NEXT_PUBLIC_SUPABASE_URL` = Project URL (e.g., `https://xxxxx.supabase.co`)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Publishable key (new) OR anon public key (legacy)
+- `SUPABASE_SERVICE_ROLE_KEY` = Secret key (new) OR service_role key (legacy) ⚠️ **Keep secret!**
+
+**Visual Guide:**
+```
+Settings → API
+├── Project URL: https://xxxxx.supabase.co  ← NEXT_PUBLIC_SUPABASE_URL
+├── Publishable and secret API keys:
+│   ├── Publishable key: eyJhbGc...  ← NEXT_PUBLIC_SUPABASE_ANON_KEY
+│   └── Secret key: eyJhbGc...  ← SUPABASE_SERVICE_ROLE_KEY (keep secret!)
+└── OR Legacy anon, service_role API keys:
+    ├── anon public: eyJhbGc...  ← NEXT_PUBLIC_SUPABASE_ANON_KEY
+    └── service_role: eyJhbGc...  ← SUPABASE_SERVICE_ROLE_KEY (keep secret!)
+```
 
 ### 3. Add Environment Variables
+
+**For Local Development:**
 
 Create or update `.env.local`:
 
 ```env
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
+
+**For Production (Azure App Service):**
+
+1. Go to Azure Portal → Your App Service → **Configuration** → **Application settings**
+2. Add these as environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL` = Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Your anon/public key
+   - `SUPABASE_SERVICE_ROLE_KEY` = Your service_role key (⚠️ Keep secret!)
+
+**For GitHub Actions (CI/CD):**
+
+1. Go to GitHub → Your repository → **Settings** → **Secrets and variables** → **Actions**
+2. Add these secrets:
+   - `NEXT_PUBLIC_SUPABASE_URL` = Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Your anon/public key
+   - `SUPABASE_SERVICE_ROLE_KEY` = Your service_role key (⚠️ Keep secret!)
 
 ### 4. Enable OAuth Providers (Optional)
 

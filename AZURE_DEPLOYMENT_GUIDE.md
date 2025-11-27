@@ -302,13 +302,46 @@ mongodb+srv://sahebscienceproject:<password>@langscope-db.global.mongocluster.co
 - **Region**: **East Asia** (or same as your Cosmos DB - East Asia)
 
 **Configuration - Deployment Tab:**
-- ⚠️ **Continuous deployment**: Select **"Disable"** ← Skip GitHub setup for now
-- ⚠️ **GitHub settings**: Leave empty (you can set up GitHub later if needed)
-- ⚠️ **Basic authentication**: Leave as **"Disable"** (default)
-- **Note**: You can deploy manually using VS Code, Azure CLI, or ZIP deploy (see deployment methods below)
+
+**If Using GitHub (Recommended):**
+- ✅ **Continuous deployment**: Select **"Enable"** ← For GitHub Actions deployment
+- **GitHub settings**:
+  - **GitHub account**: Select your GitHub account or organization
+  - **Organization**: Select `ai-scienceproject` (or your organization)
+  - **Repository**: Select `langscope` (or your repository name)
+  - **Branch**: Select `main` (or your default branch)
+- **Workflow configuration**: 
+  - Click **"Preview workflow file"** to see the GitHub Actions workflow that will be created
+  - This will create `.github/workflows/azure-deploy.yml` automatically
+- **Basic authentication**: 
+  - ⭐ **Select "Disable"** ← Not needed for GitHub Actions
+  - GitHub Actions uses Azure publish profile for authentication
+  - You can enable later if you need FTP/local Git access
+
+**If NOT Using GitHub (Manual Deployment):**
+- ⚠️ **Continuous deployment**: Select **"Disable"**
+- ⚠️ **GitHub settings**: Leave empty
+- **Basic authentication**: Select **"Enable"** (for VS Code, Azure CLI, ZIP deploy)
 
 **Configuration - Networking Tab:**
-- Leave default settings for now
+
+- **Enable public access**: 
+  - ⭐ **Select "On"** ← **REQUIRED** for web applications
+  - ✅ Allows users on the internet to access your app
+  - ✅ Your app will be accessible at `https://langscope-app.azurewebsites.net`
+  - ❌ **"Off"** - Only if you want the app isolated in a private network (not recommended for public web apps)
+  
+- **Enable virtual network integration**: 
+  - ⭐ **Select "Off"** ← Recommended for basic setup
+  - ✅ Your app can still access the internet and public services
+  - ✅ Your app can connect to Cosmos DB (already configured with "Allow Azure services")
+  - ✅ Simpler setup, no VNet configuration needed
+  - ⚠️ **"On"** - Only if you need to connect to resources in a Virtual Network
+  - **Note**: You can enable VNet integration later if needed
+
+**Summary:**
+- **Public access**: **On** (so users can access your app)
+- **Virtual network integration**: **Off** (not needed for basic setup)
 
 **Configuration - Monitoring Tab:**
 - Leave default settings (or enable Application Insights if needed)
@@ -390,11 +423,13 @@ Before clicking "Create", you'll configure the **App Service Plan**:
 1. After App Service deployment completes:
    - Go to your App Service resource
    - Click **Overview** in left menu
-   - Find **URL**: `https://langscope-app.azurewebsites.net`
+   - Find **"Default domain"** section
+   - **Copy the exact URL shown** (format: `https://[app-name]-[random-id].[region].azurewebsites.net`)
+   - Example: `https://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net`
    - **This URL is live and accessible to anyone on the internet!**
 
 2. **Test it:**
-   - Open the URL in any browser
+   - Open the exact URL from Overview in your browser
    - Your application should be accessible
    - No additional configuration needed
 
@@ -402,10 +437,12 @@ Before clicking "Create", you'll configure the **App Service Plan**:
 
 ### Default Azure URL Format
 
-- **Pattern**: `https://[app-name].azurewebsites.net`
-- **Example**: `https://langscope-app.azurewebsites.net`
+- **Pattern**: `https://[app-name]-[random-id].[region].azurewebsites.net`
+- **Example**: `https://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net`
+- **Note**: The URL includes a random ID and region code
 - **SSL**: Automatically included (HTTPS)
 - **Access**: Publicly accessible worldwide
+- ⚠️ **Important**: Always use the exact URL shown in App Service Overview
 
 ---
 
@@ -486,14 +523,28 @@ Your domain will now have HTTPS: `https://langscope.ai`
 
 ---
 
+## ✅ App Service Created Successfully!
+
+Your Azure App Service has been deployed. Next steps:
+
+1. **Configure Environment Variables** (Required)
+2. **Set up GitHub Deployment** (If you enabled it)
+3. **Deploy Your Application**
+4. **Test Your Application**
+
+---
+
 ## Environment Variables
 
-### Step 1: Configure App Settings
+**⚠️ Important:** In Azure App Service, environment variables are called **"Application settings"**. They work the same way as environment variables.
+
+### Step 1: Configure App Settings (Environment Variables)
 
 1. Go to your App Service in Azure Portal
-2. Click **Configuration** in left menu
-3. Click **Application settings** tab
-4. Click **+ New application setting**
+2. Click **Configuration** in the left menu (under Settings section)
+3. You'll see tabs: **Application settings**, **General settings**, **Path mappings**
+4. Click **Application settings** tab ← **This is where you add environment variables**
+5. Click **+ New application setting** button
 
 **Add these settings:**
 
@@ -550,7 +601,7 @@ NODE_ENV = production
 2. Click **Cloud Shell** icon (top right)
 3. Clone your repository:
    ```bash
-   git clone https://github.com/chatterjeesaheb/langscope.git
+   git clone https://github.com/ai-scienceproject/langscope.git
    cd langscope
    ```
 
@@ -574,6 +625,19 @@ NODE_ENV = production
 ---
 
 ## Deployment Methods
+
+### Getting Deployment Credentials (If Basic Auth Enabled)
+
+If you enabled Basic authentication, you'll need deployment credentials:
+
+1. **Go to App Service** in Azure Portal
+2. Click **Deployment Center** in left menu
+3. Click **Local Git/FTP** tab
+4. Click **FTPS credentials** or **Local Git credentials**
+5. Copy the **Username** and **Password**
+6. Use these credentials when deploying via VS Code, Azure CLI, or FTP
+
+**Note**: These are different from your Azure login credentials - they're specifically for deployment.
 
 ### ⭐ Method 1: VS Code Azure Extension (Easiest - Recommended)
 
@@ -664,68 +728,115 @@ az webapp up \
      --src deploy.zip
    ```
 
-### Method 4: GitHub Actions (Optional - For CI/CD)
+### Method 4: GitHub Actions (Recommended - Automatic Deployment)
 
-If you want to set up automatic deployment from GitHub later:
+**If you enabled GitHub continuous deployment during App Service creation:**
+
+The workflow file is automatically created! Here's what happens:
+
+1. **Automatic Setup:**
+   - Azure creates `.github/workflows/azure-deploy.yml` in your repository
+   - GitHub Actions workflow is configured automatically
+   - Deployment happens automatically on every push to `main` branch
+
+2. **Verify Workflow:**
+   - Go to your GitHub repository: https://github.com/ai-scienceproject/langscope
+   - Click **Actions** tab
+   - You should see the workflow file created by Azure
+
+3. **First Deployment:**
+   - Push your code to GitHub (if not already pushed)
+   - The workflow will run automatically
+   - Check **Actions** tab to see deployment progress
+
+**If you need to set up GitHub Actions manually later:**
 
 1. **Set up GitHub Secrets:**
-   - Go to your GitHub repository
-   - Settings → Secrets and variables → Actions
-   - Add these secrets:
-     - `AZURE_WEBAPP_PUBLISH_PROFILE`
-     - `AZURE_DATABASE_URL`
+   - Go to your GitHub repository: https://github.com/ai-scienceproject/langscope
+   - Click **Settings** → **Secrets and variables** → **Actions**
+   - Click **New repository secret** and add these secrets:
+     - `AZURE_WEBAPP_PUBLISH_PROFILE` (see step 2 below)
+     - `AZURE_WEBAPP_NAME` (optional, defaults to your app name)
+     - `DATABASE_URL` (your MongoDB connection string)
+     - `NEXT_PUBLIC_API_URL` (optional, defaults to your Azure URL)
+     - `NEXT_PUBLIC_WS_URL` (optional, defaults to your Azure WebSocket URL)
+     - `NEXT_PUBLIC_SUPABASE_URL` (your Supabase project URL)
+       - Get from: Supabase Dashboard → Settings → API → Project URL
+       - Format: `https://xxxxx.supabase.co`
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (your Supabase anon/public key)
+       - Get from: Supabase Dashboard → Settings → API → anon public key
+       - Safe to expose in client-side code
+     - `SUPABASE_SERVICE_ROLE_KEY` (your Supabase service_role key)
+       - Get from: Supabase Dashboard → Settings → API → service_role key
+       - ⚠️ **KEEP SECRET!** Never expose in client-side code - only use server-side
 
 2. **Get Publish Profile:**
-   - Go to App Service in Azure Portal
-   - Click **Get publish profile**
-   - Copy the content
-   - Paste into GitHub Secret `AZURE_WEBAPP_PUBLISH_PROFILE`
 
-3. **Create GitHub Actions Workflow:**
-   - Create `.github/workflows/azure-deploy.yml`
-   - (See example below)
+   **⚠️ Important:** If you see "Basic authentication is disabled" when trying to download the publish profile, you have two options:
+   
+   **Option A: Enable Basic Authentication (Temporary - Just to Get Profile)**
+   1. Go to App Service → **Deployment Center**
+   2. Click **Settings** tab
+   3. Under **Basic authentication**, click **Enable**
+   4. Click **Save**
+   5. Now go back and click **"Download publish profile"** - it should work
+   6. After getting the profile, you can disable basic auth again if you want (it's not required for GitHub Actions)
+   
+   **Option B: Use Azure CLI (No Basic Auth Needed) - ⭐ RECOMMENDED**
+   
+   If you have Azure CLI installed:
+   ```powershell
+   # 1. Login to Azure (if not already logged in)
+   az login
+   
+   # 2. Get the publish profile XML
+   az webapp deployment list-publishing-profiles `
+       --name langscope-h3eph9deh7e8b6d5 `
+       --resource-group langscope-rg `
+       --xml
+   ```
+   
+   This will output the publish profile XML directly - copy **ALL** of it.
+   
+   **If Azure CLI is not installed:**
+   - Download from: https://aka.ms/installazurecliwindows
+   - Or use Option A above (enable basic auth temporarily)
+   
+   **After Getting the Publish Profile (Either Method):**
+   1. If you downloaded a file: Open the `.PublishSettings` file (it's XML)
+   2. Copy **ALL** the content (it's a single long XML string, usually starts with `<publishData>`)
+   3. Go to GitHub: https://github.com/ai-scienceproject/langscope
+   4. Click **Settings** → **Secrets and variables** → **Actions**
+   5. Click **New repository secret**
+   6. Name: `AZURE_WEBAPP_PUBLISH_PROFILE`
+   7. Value: Paste the entire XML content (it can be very long - that's normal)
+   8. Click **Add secret**
+
+3. **Workflow File:**
+   - The workflow file `.github/workflows/deploy.yml` is already created
+   - It will automatically deploy on every push to `main` branch
+   - Or you can manually trigger it: **Actions** → **Deploy to Azure App Service** → **Run workflow**
 
 ---
 
 ## GitHub Actions Deployment Workflow
 
-Create `.github/workflows/azure-deploy.yml`:
+The workflow file `.github/workflows/deploy.yml` is configured with:
 
-```yaml
-name: Deploy to Azure
+- **Triggers**: Push to `main` branch, tags starting with `v*`, or manual dispatch
+- **Node.js**: Version 24 (LTS)
+- **Build**: Runs `npm ci` and `npm run build`
+- **Deploy**: Uses Azure publish profile to deploy to App Service
 
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build
-        run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.AZURE_DATABASE_URL }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-      
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'langscope-app'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
-```
+**Required GitHub Secrets:**
+- `AZURE_WEBAPP_PUBLISH_PROFILE` (required)
+- `DATABASE_URL` (required)
+- `NEXT_PUBLIC_SUPABASE_URL` (required)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (required)
+- `SUPABASE_SERVICE_ROLE_KEY` (required)
+- `AZURE_WEBAPP_NAME` (optional, defaults to your app name)
+- `NEXT_PUBLIC_API_URL` (optional)
+- `NEXT_PUBLIC_WS_URL` (optional)
 
 ---
 
@@ -1061,22 +1172,85 @@ If the problem continues:
 - Don't create multiple clusters simultaneously
 - Wait for one deployment to complete before starting another
 
-### App Not Accessible
+### App Not Loading / Not Accessible
 
-1. **Check App Service Status:**
+**⚠️ Important: Check the Correct URL!**
+
+Your App Service URL is shown in the **Overview** page:
+- Look for **"Default domain"** in the Overview
+- Format: `https://[app-name]-[random-id].[region].azurewebsites.net`
+- Example: `https://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net`
+- ⚠️ **NOT** `https://langscope.azurewebsites.net` (that's a different format)
+
+**Common Causes:**
+1. **Wrong URL** - Using incorrect domain name
+2. **No code deployed yet** - App Service is created but no application code is deployed
+3. **Build errors** - Application failed to build
+4. **Missing environment variables** - Required variables not configured
+5. **Application errors** - Runtime errors in the code
+6. **App Service stopped** - Service is not running
+
+**Step-by-Step Troubleshooting:**
+
+1. **Check the Correct URL:**
+   - Go to App Service → **Overview**
+   - Find **"Default domain"** section
+   - Copy the exact URL shown (it includes a random ID)
+   - Try accessing that URL in your browser
+
+2. **Check App Service Status:**
    - Go to App Service → Overview
    - Ensure status is "Running"
    - If stopped, click "Start"
+   - Wait 1-2 minutes after starting
 
 2. **Check Logs:**
-   - Go to App Service → Log stream
-   - Look for errors
-   - Check Application Insights
+   - Go to App Service → **Log stream**
+   - **"Connecting to the instance..."** is normal - wait for more output
+   - **If stuck on "Connecting..." for more than 2 minutes:**
+     - Try refreshing the log stream page
+     - Or use alternative methods below
+   - After connection, look for:
+     - ✅ **Good signs**: "Application started", "Server listening on port", "Ready", "Next.js started"
+     - ❌ **Error signs**: "Error:", "Failed to", "Cannot find module", "EADDRINUSE", "Application failed to start"
+   - **Wait 30-60 seconds** to see full startup logs
+   
+   **Alternative: Download Logs (If Log Stream Stuck)**
+   - Go to **Logs** → **App Service Logs**
+   - Enable **Application Logging (Filesystem)** if not enabled
+   - Click **Download** to get complete logs
+   - Or use **Advanced Tools (Kudu)**: Go to **Development Tools** → **Advanced Tools (Kudu)** → **Debug console** → **CMD** → Navigate to `LogFiles/Application`
 
-3. **Verify Environment Variables:**
+3. **If Log Stream is Stuck - Alternative Methods:**
+
+   **Method A: Enable Application Logging:**
+   1. Go to App Service → **Logs**
+   2. Under **Application Logging (Filesystem)**, click **On**
+   3. Set **Level** to **Verbose** (to see all logs)
+   4. Click **Save**
+   5. Restart the app
+   6. Wait 2-3 minutes, then go to **Logs** → **Download** to get logs
+   
+   **Method B: Use Kudu (Advanced Tools):**
+   1. Go to App Service → **Development Tools** → **Advanced Tools (Kudu)**
+   2. Click **Go** (opens Kudu in new tab)
+   3. Click **Debug console** → **CMD**
+   4. Navigate to: `site/wwwroot`
+   5. Check if files are deployed
+   6. Navigate to: `LogFiles/Application` to view logs
+   
+   **Method C: Check Deployment Logs:**
+   1. Go to **Deployment Center** → **Logs**
+   2. Check the latest deployment
+   3. Look for build errors or deployment failures
+
+4. **Verify Environment Variables:**
    - Go to Configuration → Application settings
-   - Ensure all variables are set
-   - Restart app after changes
+   - Ensure all variables are set:
+     - `DATABASE_URL`
+     - `NODE_ENV=production`
+     - `NEXT_PUBLIC_API_URL`
+   - Click **Save** and **Restart** app after changes
 
 ### Database Connection Issues
 
