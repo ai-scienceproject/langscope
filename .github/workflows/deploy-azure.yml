@@ -38,28 +38,24 @@ jobs:
         run: |
           # Create deployment directory with only what's needed
           mkdir -p deploy
-          
-          # Create .next directory structure first
-          mkdir -p deploy/.next
-          
+
           # Verify .next/standalone exists
           if [ ! -d ".next/standalone" ]; then
             echo "Error: .next/standalone directory not found. Build may have failed."
             exit 1
           fi
-          
-          # Copy standalone build output
-          # Standalone folder contains server.js and all dependencies in its own node_modules
-          cp -r .next/standalone deploy/
-          
-          # Copy static assets (standalone server expects .next/static at ../.next/static)
+
+          # Copy standalone build output to root of deployment package
+          # This makes the deployment package directly executable
+          cp -r .next/standalone/* deploy/
+
+          # Copy static assets to the expected location
           cp -r .next/static deploy/.next/static
-          
-          # Standalone already includes public/, but copy it for safety
+
+          # Copy public directory
           cp -r public deploy/public 2>/dev/null || true
-          
-          # Create a minimal package.json that runs the standalone server
-          # The server.js in standalone/ already handles PORT env var automatically
+
+          # Create a simple package.json that runs server.js directly
           cd deploy
           cat > package.json <<EOF
           {
@@ -67,33 +63,23 @@ jobs:
             "version": "0.1.0",
             "private": true,
             "scripts": {
-              "start": "cd standalone && node server.js"
+              "start": "node server.js"
             }
           }
           EOF
-          
-          # Create .deployment file with correct format to prevent build
+
+          # Create .deployment file to prevent build
           cat > .deployment <<EOF
           [config]
           SCM_DO_BUILD_DURING_DEPLOYMENT=false
-          ENABLE_ORYX_BUILD=false
           EOF
-          
-          # Create .deploymentignore to prevent Oryx from detecting build files
-          cat > .deploymentignore <<EOF
-          node_modules/
-          .next/cache/
-          *.ts
-          *.tsx
-          src/
-          EOF
-          
+
           # Verify deployment package structure
           echo "Deployment package structure:"
-          ls -la
+          ls -la | head -20
           echo ""
-          echo "Standalone directory contents:"
-          ls -la standalone/ | head -20
+          echo "Root files:"
+          ls -la server.js package.json .deployment 2>/dev/null || echo "Some files missing"
       
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -102,5 +88,4 @@ jobs:
           app-name: 'langscope'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deploy
-          type: zip
 
