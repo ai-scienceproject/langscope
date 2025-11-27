@@ -27,8 +27,8 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net' }}
-          NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL || 'wss://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net' }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -97,6 +97,17 @@ jobs:
           }
           EOF
 
+          # Create a startup script that bypasses Oryx extraction
+          cat > start.sh <<'EOF'
+          #!/bin/sh
+          # Startup script that bypasses Oryx node_modules extraction
+          # Use PORT environment variable (Azure sets this to 8080)
+          PORT=${PORT:-8080}
+          echo "Starting Next.js server on port $PORT"
+          exec node server.js
+          EOF
+          chmod +x start.sh
+
           # Create .deployment file to prevent build
           cat > .deployment <<EOF
           [config]
@@ -104,14 +115,27 @@ jobs:
           ENABLE_ORYX_BUILD=false
           EOF
 
+          # Create .deploymentignore to prevent Oryx from detecting files
+          cat > .deploymentignore <<EOF
+          node_modules.tar.gz
+          oryx-manifest.toml
+          .deployment
+          EOF
+
           # Remove any node_modules.tar.gz file if it exists (prevents Oryx extraction)
           rm -f node_modules.tar.gz
           rm -f oryx-manifest.toml
+          
+          # Remove any existing Oryx files that might have been copied
+          find . -name "oryx-manifest.toml" -delete 2>/dev/null || true
+          find . -name "node_modules.tar.gz" -delete 2>/dev/null || true
           
           echo ""
           echo "Final verification:"
           echo "Checking for node_modules.tar.gz (should not exist):"
           ls -la node_modules.tar.gz 2>/dev/null && echo "WARNING: node_modules.tar.gz found!" || echo "✓ No node_modules.tar.gz found (good)"
+          echo "Checking for oryx-manifest.toml (should not exist):"
+          find . -name "oryx-manifest.toml" 2>/dev/null && echo "WARNING: oryx-manifest.toml found!" || echo "✓ No oryx-manifest.toml found (good)"
       
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -121,8 +145,15 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deploy
       
-      - name: Clean up leftover Oryx files (optional)
+      - name: Post-deployment instructions
         run: |
-          echo "Note: If node_modules.tar.gz still exists on Azure, it needs to be removed manually via Kudu/SSH"
-          echo "Or set the startup command in Azure Portal to 'node server.js' to bypass the extraction"
+          echo "=========================================="
+          echo "IMPORTANT: To prevent Oryx extraction, set the startup command in Azure Portal:"
+          echo "1. Go to Azure Portal → App Service → langscope"
+          echo "2. Navigate to Configuration → General settings"
+          echo "3. Set 'Startup Command' to: node server.js"
+          echo "4. Save and restart the app"
+          echo ""
+          echo "This will bypass Oryx and prevent node_modules.tar.gz extraction."
+          echo "=========================================="
 

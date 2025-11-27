@@ -9,6 +9,28 @@ export async function GET(request: Request) {
   
   // Get origin without port (Azure App Service sometimes includes port in URL)
   let origin = requestUrl.origin
+  
+  // Fix for Azure App Service: if origin contains container hostname (hex string),
+  // use the actual Azure App Service URL from environment
+  const hostname = requestUrl.hostname
+  // Check if hostname looks like a container ID (hex string, typically 12+ chars)
+  if (/^[a-f0-9]{12,}$/i.test(hostname)) {
+    // Use WEBSITE_HOSTNAME from Azure (automatically set by Azure App Service)
+    if (process.env.WEBSITE_HOSTNAME) {
+      origin = `https://${process.env.WEBSITE_HOSTNAME}`
+    } else {
+      // If WEBSITE_HOSTNAME is not available, try to get from request headers
+      const hostHeader = request.headers.get('host')
+      if (hostHeader && !/^[a-f0-9]{12,}$/i.test(hostHeader)) {
+        origin = `https://${hostHeader}`
+      }
+      // If still not available, log warning and use original origin
+      if (origin === requestUrl.origin) {
+        console.warn('Could not determine Azure App Service hostname, using request origin:', origin)
+      }
+    }
+  }
+  
   // Remove port from HTTPS URLs (ports shouldn't be in HTTPS URLs)
   if (origin.includes(':8080') || origin.includes(':443')) {
     origin = origin.replace(/:8080|:443/g, '')

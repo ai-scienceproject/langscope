@@ -21,7 +21,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   domains,
   className,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  // Start collapsed on mobile, expanded on desktop
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024; // lg breakpoint
+    }
+    return false;
+  });
 
   if (type === 'filter' && filters && onFilterChange) {
     return (
@@ -363,14 +369,37 @@ const DomainsSidebar: React.FC<{
   return (
     <aside
       className={cn(
-        'bg-white border-l border-gray-200 transition-all duration-300 sticky top-0 h-fit',
-        collapsed ? 'w-0' : 'w-80',
+        'bg-white border-l border-gray-200 transition-all duration-300',
+        // On mobile: full width when expanded, hidden when collapsed
+        // On desktop: fixed width when expanded, hidden when collapsed
+        collapsed 
+          ? 'w-0 lg:w-0 overflow-hidden' 
+          : 'w-full lg:w-80',
+        // On mobile: position relative for better layout, on desktop: sticky
+        'lg:sticky lg:top-0 lg:h-fit',
         className
       )}
     >
       {!collapsed && (
-        <div className="px-4 sm:px-6 pt-0 pb-4 sm:pb-6">
-          <h3 className="text-base sm:text-lg font-bold text-black mb-2 sm:mb-3 pt-0">Domain Showcase</h3>
+        <div className="px-4 sm:px-6 pt-4 pb-4 sm:pb-6">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <h3 className="text-base sm:text-lg font-bold text-black">Domain Showcase</h3>
+            {/* Mobile close button */}
+            <button
+              onClick={onToggleCollapse}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close Domain Showcase"
+            >
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           <div className="space-y-1 sm:space-y-1.5">
             {domains.slice(0, 10).map((domain) => (
               <div
@@ -419,20 +448,41 @@ const DomainsSidebar: React.FC<{
         </div>
       )}
 
-      {/* Toggle button */}
-      <button
-        onClick={onToggleCollapse}
-        className="absolute top-4 -left-4 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50"
-      >
-        <svg
-          className={cn('w-4 h-4 text-gray-600 transition-transform', collapsed && 'rotate-180')}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      {/* Toggle button - only visible on desktop when collapsed */}
+      {collapsed && (
+        <button
+          onClick={onToggleCollapse}
+          className="hidden lg:flex absolute top-4 -left-4 w-8 h-8 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:bg-gray-50 z-10"
+          aria-label="Expand Domain Showcase"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+          <svg
+            className="w-4 h-4 text-gray-600 transition-transform rotate-180"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+      
+      {/* Mobile expand button - show when collapsed on mobile */}
+      {collapsed && (
+        <button
+          onClick={onToggleCollapse}
+          className="lg:hidden fixed bottom-4 right-4 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-dark-gray transition-all z-50"
+          aria-label="Show Domain Showcase"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
     </aside>
   );
 };
