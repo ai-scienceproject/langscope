@@ -43,16 +43,17 @@ jobs:
           mkdir -p deploy/.next
           
           # Copy standalone build output
+          # Standalone folder contains server.js and all dependencies
           cp -r .next/standalone deploy/
+          
+          # Copy static assets (standalone server expects .next/static at ../.next/static)
           cp -r .next/static deploy/.next/static
+          
+          # Standalone already includes public/, but copy it for safety
           cp -r public deploy/public 2>/dev/null || true
           
-          # Copy necessary files
-          cp package.json deploy/
-          cp start.sh deploy/
-          cp next.config.js deploy/ 2>/dev/null || true
-          
-          # Create a minimal package.json for standalone
+          # Create a minimal package.json that runs the standalone server
+          # The server.js in standalone/ already handles PORT env var automatically
           cd deploy
           cat > package.json <<EOF
           {
@@ -60,7 +61,7 @@ jobs:
             "version": "0.1.0",
             "private": true,
             "scripts": {
-              "start": "sh start.sh"
+              "start": "cd standalone && node server.js"
             },
             "dependencies": {}
           }
@@ -73,5 +74,4 @@ jobs:
           app-name: 'langscope'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deploy
-          startup-command: 'sh start.sh'
 
