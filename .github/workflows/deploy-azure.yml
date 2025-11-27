@@ -42,6 +42,12 @@ jobs:
           # Create .next directory structure first
           mkdir -p deploy/.next
           
+          # Verify .next/standalone exists
+          if [ ! -d ".next/standalone" ]; then
+            echo "Error: .next/standalone directory not found. Build may have failed."
+            exit 1
+          fi
+          
           # Copy standalone build output
           # Standalone folder contains server.js and all dependencies in its own node_modules
           cp -r .next/standalone deploy/
@@ -54,7 +60,6 @@ jobs:
           
           # Create a minimal package.json that runs the standalone server
           # The server.js in standalone/ already handles PORT env var automatically
-          # Empty dependencies array prevents Azure from trying to install packages
           cd deploy
           cat > package.json <<EOF
           {
@@ -73,11 +78,12 @@ jobs:
           SCM_DO_BUILD_DURING_DEPLOYMENT=false
           EOF
           
-          # Verify standalone structure
+          # Verify deployment package structure
           echo "Deployment package structure:"
-          ls -la deploy/
-          echo "Standalone contents:"
-          ls -la deploy/standalone/ | head -20
+          ls -la
+          echo ""
+          echo "Standalone directory contents:"
+          ls -la standalone/ | head -20
       
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
