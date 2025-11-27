@@ -6,6 +6,7 @@ import Layout from '@/components/layout/Layout';
 import DomainCard from '@/components/domain/DomainCard';
 import SearchBar from '@/components/ui/SearchBar';
 import Skeleton from '@/components/ui/Skeleton';
+import Image from 'next/image';
 import { Domain } from '@/types';
 
 export default function RankingsIndexPage() {
@@ -67,9 +68,12 @@ export default function RankingsIndexPage() {
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Model Rankings
-              </h1>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Image src="/logos/ranking.png" alt="Rankings" width={40} height={40} className="w-10 h-10" />
+                <h1 className="text-4xl font-bold text-gray-900">
+                  Model Rankings
+                </h1>
+              </div>
               <p className="text-lg text-gray-600 mb-8">
                 Choose a domain to see how different LLMs rank based on battle results and performance metrics.
               </p>

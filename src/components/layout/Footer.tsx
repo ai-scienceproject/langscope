@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Footer: React.FC = () => {
   const footerLinks = {
@@ -65,11 +66,11 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           {/* Logo and tagline */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">L</span>
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
+                <Image src="/logos/langscope.png" alt="Langscope" width={32} height={32} className="w-8 h-8" />
+                <span className="text-xl font-bold text-white">Langscope</span>
               </div>
-              <span className="text-xl font-bold text-white">Langscope</span>
             </div>
             <p className="text-sm text-gray-400 mb-4">
               Battle-tested LLM rankings with secure data verification.

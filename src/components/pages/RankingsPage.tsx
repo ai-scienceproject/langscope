@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
 import { SkeletonTable } from '@/components/ui/Skeleton';
+import Image from 'next/image';
 import type { Domain, ModelRanking, FilterState } from '@/types';
 
 interface RankingsPageProps {
@@ -201,7 +202,10 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
       {/* Rankings Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Model Rankings</h2>
+          <div className="flex items-center gap-3 mb-1">
+            <Image src="/logos/ranking.png" alt="Rankings" width={32} height={32} className="w-8 h-8" />
+            <h2 className="text-2xl font-bold text-gray-900">Model Rankings</h2>
+          </div>
           <p className="text-gray-600 mt-1">
             Battle-tested rankings based on {domain?.battleCount.toLocaleString()} evaluations
           </p>

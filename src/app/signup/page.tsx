@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
+import Image from 'next/image';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -84,13 +85,11 @@ export default function SignupPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-10 animate-fade-in">
-          <Link href="/" className="inline-flex items-center gap-3 mb-4 group">
-            <div className="w-14 h-14 bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 rounded-2xl flex items-center justify-center shadow-xl shadow-primary-500/30 group-hover:scale-110 transition-transform duration-300">
-              <span className="text-white font-bold text-2xl">L</span>
+          <Link href="/" className="inline-block mb-4 group">
+            <div className="flex items-center justify-center gap-3 group-hover:scale-105 transition-transform duration-300">
+              <Image src="/logos/langscope.png" alt="Langscope" width={56} height={56} className="w-14 h-14" />
+              <span className="text-3xl font-bold text-gray-900">Langscope</span>
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
-              Langscope
-            </span>
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Create your account</h1>
           <p className="text-gray-600 text-lg">Get started with Langscope today</p>

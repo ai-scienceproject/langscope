@@ -9,6 +9,7 @@ import SearchBar from '@/components/ui/SearchBar';
 import Skeleton from '@/components/ui/Skeleton';
 import Button from '@/components/ui/Button';
 import JudgeSelectionModal from '@/components/battle/JudgeSelectionModal';
+import Image from 'next/image';
 import { Domain } from '@/types';
 
 export default function ArenaIndexPage() {
@@ -115,7 +116,7 @@ export default function ArenaIndexPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 rounded-full mb-6">
-                <span className="text-5xl">⚔️</span>
+                <Image src="/logos/battle.png" alt="Battle Arena" width={80} height={80} className="w-20 h-20" />
               </div>
               <h1 className="text-5xl font-bold mb-4">
                 Battle Arena

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface User {
   name: string;
@@ -41,23 +42,33 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
 
   const navigation = [
     { name: 'Home', href: '/', icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
+        <defs>
+          <linearGradient id="homeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1D4ED8" />
+          </linearGradient>
+        </defs>
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="url(#homeGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="#1E40AF" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.3" transform="translate(1, 1)" />
       </svg>
     )},
     { name: 'Rankings', href: '/rankings', icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
+      <Image src="/logos/ranking.png" alt="Rankings" width={28} height={28} className="w-7 h-7" />
     )},
     { name: 'Arena', href: '/arena', icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
+      <Image src="/logos/battle.png" alt="Arena" width={28} height={28} className="w-7 h-7" />
     )},
     { name: 'About', href: '/about', icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
+        <defs>
+          <linearGradient id="aboutGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#7C3AED" />
+          </linearGradient>
+        </defs>
+        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="url(#aboutGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#6D28D9" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.3" transform="translate(1, 1)" />
       </svg>
     )},
   ];
@@ -89,25 +100,21 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
 
       <aside className={cn(
         'bg-white border-r border-gray-200 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 shadow-sm z-40',
-        collapsed ? 'w-16 sm:w-20' : 'w-64 sm:w-72',
+        collapsed ? 'w-12' : 'w-64 sm:w-72',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}>
       {/* Logo Section */}
       <div className="p-4 sm:p-6 border-b border-gray-200/80">
-        <Link href="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
-          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center shadow-lg hover:bg-dark-gray transition-all duration-300">
-            <span className="text-white font-bold text-lg">L</span>
-          </div>
+        <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3">
+          <Image src="/logos/langscope.png" alt="Langscope" width={40} height={40} className="w-10 h-10" />
           {!collapsed && (
-            <span className="text-xl font-bold text-black">
-              Langscope
-            </span>
+            <span className="text-xl font-bold text-black">Langscope</span>
           )}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto min-h-0">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -116,7 +123,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 group',
                 collapsed ? 'justify-center' : '',
                 isActive
                   ? 'bg-light-gray text-black shadow-sm border border-gray-200'
@@ -143,7 +150,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
         <>
           {/* Upgrade Section */}
           {!collapsed && (
-            <div className="px-3 pb-4">
+            <div className="px-3 pt-4 pb-2 border-t border-gray-200/80">
               <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
                 <div className="text-xs font-semibold text-black mb-1">Current plan</div>
                 <div className="text-xs text-dark-gray mb-3">Free trial</div>
@@ -156,14 +163,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
           )}
 
           {/* User Profile */}
-          <div className="px-3 pb-4 border-t border-gray-200/80 pt-4">
+          <div className="px-3 pt-2 pb-1 border-t border-gray-200/80">
             <div className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-light-gray transition-colors cursor-pointer group",
+              "flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-light-gray transition-colors cursor-pointer group",
               collapsed && 'justify-center'
             )}>
-              <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white text-sm font-semibold shadow-sm flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white text-xs font-semibold shadow-sm flex-shrink-0">
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-full h-full rounded-xl object-cover" />
+                  <img src={user.avatar} alt={user.name} className="w-full h-full rounded-lg object-cover" />
                 ) : (
                   user.name.charAt(0).toUpperCase()
                 )}
@@ -171,11 +178,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
               {!collapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-black truncate">{user.name}</div>
-                    <div className="text-xs text-dark-gray truncate">{user.email}</div>
+                    <div className="text-xs font-semibold text-black truncate">{user.name}</div>
+                    <div className="text-[10px] text-dark-gray truncate">{user.email}</div>
                   </div>
                   <svg
-                    className="w-4 h-4 text-dark-gray group-hover:text-black transition-colors flex-shrink-0"
+                    className="w-3 h-3 text-dark-gray group-hover:text-black transition-colors flex-shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -188,17 +195,17 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
           </div>
 
           {/* Logout */}
-          <div className="px-3 pb-4">
+          <div className="px-3 pb-3 pt-1">
             <button
               onClick={handleLogout}
               className={cn(
-                "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group",
+                "flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group",
                 collapsed && 'justify-center'
               )}
               title={collapsed ? 'Logout' : undefined}
             >
               <svg
-                className="w-5 h-5 text-dark-gray group-hover:text-red-500 transition-colors"
+                className="w-4 h-4 text-dark-gray group-hover:text-red-500 transition-colors"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -211,7 +218,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
         </>
       ) : (
         /* Login/Signup Section */
-        <div className="px-3 pb-4 border-t border-gray-200/80 pt-4 space-y-2">
+        <div className="px-3 pb-3 border-t border-gray-200/80 pt-3 space-y-1.5">
           {!collapsed ? (
             <>
               <button
@@ -219,7 +226,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   router.push('/login');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-3 py-2.5 rounded-xl text-sm font-medium text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                className="w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
               >
                 Log in
               </button>
@@ -228,7 +235,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   router.push('/signup');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
+                className="w-full px-2 py-1.5 rounded-lg text-xs font-semibold text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
               >
                 Sign up
               </button>
@@ -240,10 +247,10 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   router.push('/login');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full p-2.5 rounded-xl text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
+                className="w-full p-2 rounded-lg text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
                 title="Log in"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
               </button>
@@ -252,10 +259,10 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   router.push('/signup');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full p-2.5 rounded-xl text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
+                className="w-full p-2 rounded-lg text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
                 title="Sign up"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </button>
@@ -265,15 +272,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       )}
 
       {/* Collapse Toggle - Hidden on mobile */}
-      <div className="hidden lg:block px-3 pb-4 border-t border-gray-200/80 pt-4">
+      <div className="hidden lg:block px-3 pb-2 border-t border-gray-200/80 pt-1.5">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center p-2.5 rounded-xl text-dark-gray hover:bg-light-gray hover:text-black transition-all duration-200 group"
+          className="w-full flex items-center justify-center p-1 rounded text-dark-gray hover:bg-light-gray hover:text-black transition-all duration-200 group"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg
             className={cn(
-              "w-5 h-5 transition-transform duration-300",
+              "w-3 h-3 transition-transform duration-300",
               collapsed && "rotate-180"
             )}
             fill="none"
