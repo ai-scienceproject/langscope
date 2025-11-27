@@ -46,6 +46,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if OpenRouter API key is configured
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { 
+          error: 'OpenRouter API key is not configured. Please set OPENROUTER_API_KEY in Azure App Service environment variables.',
+          success: false 
+        },
+        { status: 500 }
+      );
+    }
+
     // Call OpenRouter API with retry logic
     // Limit max_tokens to stay within free tier limits (default: 1000 tokens)
     const maxTokens = Math.min(1000, parseInt(process.env.OPENROUTER_MAX_TOKENS || '1000'));
@@ -56,7 +68,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || ''}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: modelId,

@@ -9,12 +9,19 @@ async function evaluateWithLLM(
   responseB: string
 ): Promise<'A' | 'B' | 'Tie'> {
   try {
+    // Check if OpenRouter API key is configured
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      console.error('OpenRouter API key is not configured');
+      return 'Tie'; // Default to Tie if API key is missing
+    }
+
     // Call OpenRouter API to use an LLM as judge
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY || ''}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: judgeModelId,
