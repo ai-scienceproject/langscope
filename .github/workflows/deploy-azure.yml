@@ -39,6 +39,9 @@ jobs:
           # Create deployment directory with only what's needed
           mkdir -p deploy
           
+          # Create .next directory structure first
+          mkdir -p deploy/.next
+          
           # Copy standalone build output
           cp -r .next/standalone deploy/
           cp -r .next/static deploy/.next/static
