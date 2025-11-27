@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -19,12 +20,19 @@ interface LeftSidebarProps {
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still redirect even if logout fails
+      router.push('/login');
+    }
   };
 
   const navigation = [

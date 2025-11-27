@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 
 interface User {
@@ -20,10 +21,17 @@ const Header: React.FC<HeaderProps> = ({ user, isAuthenticated = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still redirect even if logout fails
+      router.push('/login');
+    }
   };
 
   const navigation = [

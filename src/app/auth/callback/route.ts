@@ -2,22 +2,56 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  try {
-    const requestUrl = new URL(request.url)
-    const code = requestUrl.searchParams.get('code')
-    const origin = requestUrl.origin
-
-    if (code) {
-      const supabase = await createClient()
-      await supabase.auth.exchangeCodeForSession(code)
-    }
-
-    // URL to redirect to after sign in process completes
-    return NextResponse.redirect(`${origin}/`)
-  } catch {
-    // If Supabase is not configured, redirect to home
-    const requestUrl = new URL(request.url)
-    return NextResponse.redirect(`${requestUrl.origin}/`)
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const error = requestUrl.searchParams.get('error')
+  const errorDescription = requestUrl.searchParams.get('error_description')
+  
+  // Get origin without port (Azure App Service sometimes includes port in URL)
+  let origin = requestUrl.origin
+  // Remove port from HTTPS URLs (ports shouldn't be in HTTPS URLs)
+  if (origin.includes(':8080') || origin.includes(':443')) {
+    origin = origin.replace(/:8080|:443/g, '')
   }
+
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error, errorDescription)
+    // Redirect to login with error message
+    const loginUrl = new URL('/login', origin)
+    loginUrl.searchParams.set('error', error)
+    if (errorDescription) {
+      loginUrl.searchParams.set('message', errorDescription)
+    }
+    return NextResponse.redirect(loginUrl.toString())
+  }
+
+  // Handle OAuth callback with code
+  if (code) {
+    try {
+      const supabase = await createClient()
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (exchangeError) {
+        console.error('Error exchanging code for session:', exchangeError)
+        const loginUrl = new URL('/login', origin)
+        loginUrl.searchParams.set('error', 'oauth_error')
+        loginUrl.searchParams.set('message', exchangeError.message)
+        return NextResponse.redirect(loginUrl.toString())
+      }
+
+      // Success - redirect to home
+      return NextResponse.redirect(`${origin}/`)
+    } catch (err) {
+      console.error('Unexpected error in OAuth callback:', err)
+      const loginUrl = new URL('/login', origin)
+      loginUrl.searchParams.set('error', 'oauth_error')
+      loginUrl.searchParams.set('message', 'An unexpected error occurred during authentication')
+      return NextResponse.redirect(loginUrl.toString())
+    }
+  }
+
+  // No code and no error - redirect to home
+  return NextResponse.redirect(`${origin}/`)
 }
 
