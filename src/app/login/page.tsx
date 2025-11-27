@@ -39,16 +39,18 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
-    } catch (error) {
-      setError('Failed to sign in with Google');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to sign in with Google';
+      setError(message);
     }
   };
 
   const handleGitHubLogin = async () => {
     try {
       await signInWithGitHub();
-    } catch (error) {
-      setError('Failed to sign in with GitHub');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to sign in with GitHub';
+      setError(message);
     }
   };
 

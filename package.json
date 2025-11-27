@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:webpack": "next dev --no-turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "sh start.sh",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "db:seed": "ts-node --project tsconfig.seed.json scripts/seed.ts"
