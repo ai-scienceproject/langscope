@@ -61,7 +61,7 @@ langscope/
 │   ├── contexts/                # React contexts
 │   ├── types/                   # TypeScript type definitions
 │   └── styles/                  # Global styles
-├── scripts/                     # Utility scripts (seed, etc.)
+├── scripts/                     # Utility scripts
 ├── public/                      # Static assets
 └── package.json                 # Dependencies and scripts
 ```
@@ -85,14 +85,28 @@ langscope/
 - Uses global caching to prevent multiple connections in development
 - Implements connection reuse for serverless environments
 - Handles connection errors gracefully
+- **Automatic database name fix**: Automatically adds `/langscope` to connection strings if missing (Azure Cosmos DB connection strings often don't include database name)
+
+**Database Name Fix**:
+The `ensureDatabaseName()` function automatically adds the database name `/langscope` to connection strings that are missing it. This is particularly important for Azure Cosmos DB connection strings which often end with `/?options` instead of `/databaseName?options`.
 
 **Code Explanation**:
 ```typescript
+// Function to ensure database name is present in connection string
+function ensureDatabaseName(uri: string): string {
+  // Checks if mongodb+srv:// or mongodb:// connection string
+  // If database name is missing, adds /langscope
+  // Returns corrected connection string
+}
+
 // Global cache to store connection in development (Next.js hot reload)
 const cached: MongooseCache = global.mongoose || { conn: null, promise: null };
 
 // Function to connect to MongoDB
 async function connectDB(): Promise<typeof mongoose> {
+  // Get and process connection string dynamically (ensures database name is present)
+  const MONGODB_URI = ensureDatabaseName(process.env.DATABASE_URL);
+  
   // If connection exists, return it
   if (cached.conn) {
     return cached.conn;
@@ -1072,7 +1086,22 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Protects routes that require authentication
 - Updates Supabase session on each request
 - Redirects unauthenticated users to `/login`
-- Allows public routes: `/`, `/about`, `/login`, `/signup`, `/api/*`
+- **Protected Routes** (require login):
+  - `/arena/*` - Arena battle pages
+  - `/results/*` - Results dashboard pages
+  - `/compare` - Model comparison page
+  - `POST /api/battles` - Creating battles
+  - `POST /api/battles/evaluate` - Evaluating battles
+  - `POST /api/generate` - Generating responses
+- **Public Routes** (no login required):
+  - `/` - Home page
+  - `/about` - About page
+  - `/login` - Login page
+  - `/signup` - Signup page
+  - `/rankings` - Rankings page (public)
+  - `/rankings/*` - Ranking detail pages (public)
+  - `/models` - Models page (public)
+  - `GET /api/*` - All GET API routes (public)
 
 **OAuth Callback** (`src/app/auth/callback/route.ts`):
 - Handles OAuth redirects from providers
@@ -1081,7 +1110,8 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 **Environment Variables**:
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key (public key)
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (server-side only, optional)
 
 **Features**:
 - ✅ Email/password authentication
@@ -1103,8 +1133,12 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 **Key Settings**:
 - `reactStrictMode: true`: Enables React strict mode
+- `output: 'standalone'`: Enables Next.js standalone output mode for optimized deployments (Azure)
+  - Bundles only production dependencies
+  - Creates minimal `server.js` for self-hosting
+  - Significantly reduces deployment size and startup time
 - Image optimization: Allows images from all HTTPS domains
-- Environment variables: Configures `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL`
+- Environment variables: `NEXT_PUBLIC_*` variables are automatically exposed to the browser
 
 ### TypeScript Config (`tsconfig.json`)
 
@@ -1208,19 +1242,26 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 ### Required Variables
 
-- `DATABASE_URL` or `MONGODB_URI`: MongoDB connection string
+- `DATABASE_URL`: MongoDB connection string
   - Format: `mongodb://localhost:27017/langscope` (local)
   - Format: `mongodb+srv://user:pass@cluster.mongodb.net/langscope` (Atlas)
-  - Format: `mongodb://langscope-mongodb.mongo.cosmos.azure.com:10255/...` (Azure Cosmos DB)
+  - Format: `mongodb+srv://user:pass@cluster.global.mongocluster.cosmos.azure.com/langscope?tls=true&...` (Azure Cosmos DB)
+  - **Note**: The connection string should include the database name (`/langscope`). If missing, the code automatically adds it.
+  - **Azure Cosmos DB**: Connection strings from Azure Portal often don't include the database name. The code automatically adds `/langscope` if missing.
 
 ### Authentication Variables (Supabase)
 
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
   - Format: `https://your-project.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
   - Found in Supabase Dashboard → Settings → API
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key (public key)
+  - Found in Supabase Dashboard → Settings → API
+  - Safe to expose in client-side code
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (optional, server-side only)
+  - Found in Supabase Dashboard → Settings → API
+  - **Never expose in client-side code** - only use in API routes or server components
 
-**Note**: If Supabase variables are not set, authentication features will be disabled gracefully.
+**Note**: If Supabase variables are not set, authentication features will be disabled gracefully. The app will work without authentication, but protected routes will redirect to login.
 
 ### Optional Variables
 
@@ -1231,24 +1272,59 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 ---
 
-## Scripts
+## Deployment
 
-### Database Seed (`scripts/seed.ts`)
+### Azure App Service Deployment
 
-**Purpose**: Populates MongoDB with initial data.
+The application is configured for deployment to Azure App Service using GitHub Actions.
 
-**Process**:
-1. Connects to MongoDB
-2. Clears existing data (optional)
-3. Creates organizations (OpenAI, Anthropic, Google, etc.)
-4. Creates domains (Code Generation, Customer Support, etc.)
-5. Creates models (GPT-4, Claude 3, etc.)
-6. Creates test cases
-7. Creates model rankings with initial ELO scores
-8. Creates evaluations
-9. Creates battles with random winners
+**Deployment Workflow** (`.github/workflows/deploy-azure.yml`):
+- Triggers on pushes to `main` branch
+- Builds Next.js application in standalone mode
+- Creates optimized deployment package
+- Deploys to Azure App Service using publish profile
 
-**Usage**: `npm run db:seed`
+**Key Features**:
+- **Standalone Build**: Uses Next.js `output: 'standalone'` for minimal deployment size
+- **Optimized Package**: Only includes production dependencies and necessary files
+- **Automatic Deployment**: GitHub Actions handles build and deployment automatically
+
+**Required GitHub Secrets**:
+- `AZURE_WEBAPP_PUBLISH_PROFILE`: Azure App Service publish profile (download from Azure Portal)
+- `DATABASE_URL`: MongoDB connection string (with `/langscope` database name)
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (optional)
+- `NEXT_PUBLIC_API_URL`: API base URL (optional, defaults to Azure App Service URL)
+- `NEXT_PUBLIC_WS_URL`: WebSocket URL (optional, defaults to Azure App Service URL)
+
+**Azure App Service Configuration**:
+- **Runtime Stack**: Node.js 24 LTS
+- **Startup Command**: `node server.js` (automatically set by standalone build)
+- **Port**: Azure sets `PORT` environment variable (default: 8080)
+- **Application Settings**: All environment variables must be set in Azure Portal
+
+**Deployment Process**:
+1. Code is pushed to `main` branch
+2. GitHub Actions workflow triggers
+3. Application is built in standalone mode
+4. Deployment package is created with:
+   - `.next/standalone/*` (bundled server and dependencies)
+   - `.next/static/*` (static assets)
+   - `public/*` (public assets)
+   - `package.json` (minimal, runs `node server.js`)
+5. Package is deployed to Azure App Service
+6. Azure starts the application using `node server.js`
+
+**Database Connection**:
+- Azure Cosmos DB connection strings are automatically fixed to include `/langscope` database name
+- Connection string format: `mongodb+srv://user:pass@cluster.global.mongocluster.cosmos.azure.com/langscope?tls=true&...`
+
+**Troubleshooting**:
+- If deployment fails, check GitHub Actions logs
+- If app doesn't start, check Azure App Service logs (Log stream)
+- Ensure all environment variables are set in Azure Portal
+- Verify `DATABASE_URL` includes database name or let the code add it automatically
 
 ---
 

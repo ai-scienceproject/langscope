@@ -4,12 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:webpack": "next dev --no-turbopack",
     "build": "next build",
-    "start": "next start -p ${PORT:-8080}",
+    "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
-    "db:seed": "ts-node --project tsconfig.seed.json scripts/seed.ts"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

@@ -47,9 +47,6 @@ nano .env
 # DATABASE_URL="mongodb://localhost:27017/langscope"
 # See MONGODB_SETUP.md for detailed setup instructions
 
-# Seed the database with sample data (optional)
-npm run db:seed
-
 # Start development server
 npm run dev
 ```

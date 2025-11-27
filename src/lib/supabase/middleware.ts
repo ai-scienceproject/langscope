@@ -41,15 +41,44 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect routes that require authentication
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/api') &&
-    request.nextUrl.pathname !== '/' &&
-    request.nextUrl.pathname !== '/about'
-  ) {
-    // No user, potentially respond by redirecting the user to the login page
+  // Only battle-related actions require login:
+  // - /arena/* (starting battles)
+  // - /results/* (viewing results)
+  // - /compare (comparing models)
+  // - POST /api/battles (creating battles)
+  // - POST /api/battles/evaluate (evaluating battles)
+  // - POST /api/generate (generating responses)
+  
+  const protectedRoutes = [
+    '/arena', // Arena pages require login
+    '/results', // Results pages require login
+    '/compare', // Compare page requires login
+  ]
+  
+  const protectedApiRoutes = [
+    '/api/battles', // POST to create battles
+    '/api/battles/evaluate', // POST to evaluate battles
+    '/api/generate', // POST to generate responses
+  ]
+  
+  const isProtectedRoute = protectedRoutes.some(route => 
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  )
+  
+  const isProtectedApiRoute = protectedApiRoutes.some(route => 
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  ) && request.method === 'POST' // Only protect POST requests for API routes
+  
+  // Always allow login, signup, and public pages
+  const isPublicRoute = 
+    request.nextUrl.pathname.startsWith('/login') ||
+    request.nextUrl.pathname.startsWith('/signup') ||
+    request.nextUrl.pathname === '/' ||
+    request.nextUrl.pathname === '/about'
+  
+  // Require authentication for protected routes
+  if (!user && (isProtectedRoute || isProtectedApiRoute) && !isPublicRoute) {
+    // No user, redirect to login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

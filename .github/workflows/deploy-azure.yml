@@ -45,9 +45,17 @@ jobs:
             exit 1
           fi
 
+          # Show standalone structure for debugging
+          echo "Standalone build structure:"
+          ls -la .next/standalone/ | head -20
+          echo ""
+          echo "Checking for node_modules in standalone:"
+          ls -la .next/standalone/node_modules 2>/dev/null && echo "✓ node_modules found" || echo "⚠️  node_modules not found in standalone"
+          echo ""
+
           # Copy standalone build output to root of deployment package
-          # This makes the deployment package directly executable
-          cp -r .next/standalone/* deploy/
+          # Use cp -a to preserve all attributes and copy hidden files
+          cp -a .next/standalone/. deploy/
 
           # Create .next directory structure for static assets
           mkdir -p deploy/.next
@@ -56,11 +64,28 @@ jobs:
           # Next.js standalone server expects .next/static at this location
           cp -r .next/static deploy/.next/static
 
-          # Copy public directory
-          cp -r public deploy/public 2>/dev/null || true
+          # Copy public directory (standalone should already have it, but ensure it's there)
+          if [ -d "public" ]; then
+            cp -r public deploy/public 2>/dev/null || true
+          fi
 
-          # Create a simple package.json that runs server.js directly
+          # Verify node_modules exists in deploy
           cd deploy
+          echo "Deployment package structure:"
+          ls -la | head -20
+          echo ""
+          echo "Checking for required files:"
+          [ -f "server.js" ] && echo "✓ server.js found" || echo "❌ server.js missing"
+          [ -d "node_modules" ] && echo "✓ node_modules found" || echo "❌ node_modules missing"
+          [ -f "package.json" ] && echo "✓ package.json found" || echo "⚠️  package.json will be created"
+          echo ""
+          
+          # Verify next is in node_modules
+          if [ -d "node_modules" ]; then
+            [ -d "node_modules/next" ] && echo "✓ next module found in node_modules" || echo "❌ next module missing in node_modules"
+          fi
+
+          # Create/update package.json that runs server.js directly
           cat > package.json <<EOF
           {
             "name": "langscope",
@@ -76,14 +101,17 @@ jobs:
           cat > .deployment <<EOF
           [config]
           SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          ENABLE_ORYX_BUILD=false
           EOF
 
-          # Verify deployment package structure
-          echo "Deployment package structure:"
-          ls -la | head -20
+          # Remove any node_modules.tar.gz file if it exists (prevents Oryx extraction)
+          rm -f node_modules.tar.gz
+          rm -f oryx-manifest.toml
+          
           echo ""
-          echo "Root files:"
-          ls -la server.js package.json .deployment 2>/dev/null || echo "Some files missing"
+          echo "Final verification:"
+          echo "Checking for node_modules.tar.gz (should not exist):"
+          ls -la node_modules.tar.gz 2>/dev/null && echo "WARNING: node_modules.tar.gz found!" || echo "✓ No node_modules.tar.gz found (good)"
       
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -92,4 +120,9 @@ jobs:
           app-name: 'langscope'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deploy
+      
+      - name: Clean up leftover Oryx files (optional)
+        run: |
+          echo "Note: If node_modules.tar.gz still exists on Azure, it needs to be removed manually via Kudu/SSH"
+          echo "Or set the startup command in Azure Portal to 'node server.js' to bypass the extraction"
 
