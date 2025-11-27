@@ -5,4 +5,3 @@
 PORT=${PORT:-8080}
 echo "Starting Next.js on port $PORT"
 next start -p $PORT
-
