@@ -127,45 +127,45 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-3 sm:py-4 md:py-6 bg-white rounded-2xl sm:rounded-3xl border-2 border-gray-200 mb-4 sm:mb-6 shadow-lg">
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-3 sm:px-4 md:px-6">
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
-            <div className="flex-shrink-0 w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+      <section className="py-2 sm:py-3 md:py-4 bg-white rounded-2xl sm:rounded-3xl border border-gray-200 mb-1 sm:mb-2 shadow-lg">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 pl-3 sm:pl-3 md:pl-4 pr-2 sm:pr-2 md:pr-3">
+          <div className="flex flex-col sm:flex-row items-start gap-1.5 p-2.5 rounded-xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
+            <div className="flex-shrink-0 text-2xl group-hover:scale-110 transition-all duration-300">
               📊
             </div>
-            <div>
-              <h3 className="font-bold text-black mb-1.5 text-sm">Data-Driven Rankings</h3>
-              <p className="text-xs text-dark-gray leading-relaxed">from 10,000+ LLM Battles</p>
+            <div className="flex-1">
+              <h3 className="font-bold text-black mb-0.5 text-sm leading-snug">Data-Driven Rankings</h3>
+              <p className="text-xs text-dark-gray leading-normal">from 10,000+ LLM Battles</p>
             </div>
           </div>
           
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
-            <div className="flex-shrink-0 w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+          <div className="flex flex-col sm:flex-row items-start gap-1.5 p-2.5 rounded-xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
+            <div className="flex-shrink-0 text-2xl group-hover:scale-110 transition-all duration-300">
               🌐
             </div>
-            <div>
-              <h3 className="font-bold text-black mb-1.5 text-sm">Multi-Domain Support</h3>
-              <p className="text-xs text-dark-gray leading-relaxed">Medical, Legal, Finance, +12 more</p>
+            <div className="flex-1">
+              <h3 className="font-bold text-black mb-0.5 text-sm leading-snug">Multi-Domain Support</h3>
+              <p className="text-xs text-dark-gray leading-normal">Medical, Legal, Finance, +12 more</p>
             </div>
           </div>
           
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
-            <div className="flex-shrink-0 w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+          <div className="flex flex-col sm:flex-row items-start gap-1.5 p-2.5 rounded-xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
+            <div className="flex-shrink-0 text-2xl group-hover:scale-110 transition-all duration-300">
               🔒
             </div>
-            <div>
-              <h3 className="font-bold text-black mb-1.5 text-sm">Immutable Public Ledger</h3>
-              <p className="text-xs text-dark-gray leading-relaxed">No Gaming, No Collusion</p>
+            <div className="flex-1">
+              <h3 className="font-bold text-black mb-0.5 text-sm leading-snug">Immutable Public Ledger</h3>
+              <p className="text-xs text-dark-gray leading-normal">No Gaming, No Collusion</p>
             </div>
           </div>
           
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
-            <div className="flex-shrink-0 w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white text-xl shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+          <div className="flex flex-col sm:flex-row items-start gap-1.5 p-2.5 rounded-xl bg-light-gray border border-gray-200 hover:bg-white hover:border-dark-gray hover:shadow-lg transition-all duration-300 group">
+            <div className="flex-shrink-0 text-2xl group-hover:scale-110 transition-all duration-300">
               ⚔️
             </div>
-            <div>
-              <h3 className="font-bold text-black mb-1.5 text-sm">Test Top Models Yourself</h3>
-              <p className="text-xs text-dark-gray leading-relaxed">Manual Arena Mode</p>
+            <div className="flex-1">
+              <h3 className="font-bold text-black mb-0.5 text-sm leading-snug">Test Top Models Yourself</h3>
+              <p className="text-xs text-dark-gray leading-normal">Manual Arena Mode</p>
             </div>
           </div>
         </div>
