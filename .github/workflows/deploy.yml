@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Azure App Service
 
 on:
   workflow_dispatch:
@@ -8,59 +8,38 @@ on:
       - 'v*'
 
 jobs:
-  deploy:
-    name: Deploy Application
+  build-and-deploy:
+    name: Build and Deploy to Azure
     runs-on: ubuntu-latest
     environment: production
-    # Skip deployment for now - set to false to disable
-    if: false
+    
     steps:
-      - name: Deployment disabled
-        run: echo "Deployment is currently disabled. Set 'if: false' to 'if: true' or remove the condition to enable."
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      # When deployment is enabled, uncomment the steps below:
-      # - name: Checkout code
-      #   uses: actions/checkout@v4
-      #
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      #     cache: 'npm'
-      #
-      # - name: Install dependencies
-      #   run: npm ci
-      #
-      # - name: Generate Prisma Client
-      #   run: npm run db:generate
-      #   env:
-      #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      #
-      # - name: Run database migrations
-      #   run: npm run db:migrate
-      #   env:
-      #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      #
-      # - name: Build Next.js application
-      #   run: npm run build
-      #   env:
-      #     NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-      #     NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL }}
-      #
-      # Example: Deploy to Vercel
-      # - name: Deploy to Vercel
-      #   uses: amondnet/vercel-action@v25
-      #   with:
-      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
-      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-      #     vercel-args: '--prod'
-      #
-      # Example: Deploy to AWS
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: us-east-1
-
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net' }}
+          NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL || 'wss://langscope-h3eph9deh7e8b6d5.eastasia-01.azurewebsites.net' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NODE_ENV: production
+      
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME || 'langscope-h3eph9deh7e8b6d5' }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
