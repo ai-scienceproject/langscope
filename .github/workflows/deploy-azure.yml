@@ -49,7 +49,11 @@ jobs:
           # This makes the deployment package directly executable
           cp -r .next/standalone/* deploy/
 
+          # Create .next directory structure for static assets
+          mkdir -p deploy/.next
+          
           # Copy static assets to the expected location
+          # Next.js standalone server expects .next/static at this location
           cp -r .next/static deploy/.next/static
 
           # Copy public directory
