@@ -43,7 +43,7 @@ jobs:
           mkdir -p deploy/.next
           
           # Copy standalone build output
-          # Standalone folder contains server.js and all dependencies
+          # Standalone folder contains server.js and all dependencies in its own node_modules
           cp -r .next/standalone deploy/
           
           # Copy static assets (standalone server expects .next/static at ../.next/static)
@@ -54,6 +54,7 @@ jobs:
           
           # Create a minimal package.json that runs the standalone server
           # The server.js in standalone/ already handles PORT env var automatically
+          # Empty dependencies array prevents Azure from trying to install packages
           cd deploy
           cat > package.json <<EOF
           {
@@ -62,10 +63,21 @@ jobs:
             "private": true,
             "scripts": {
               "start": "cd standalone && node server.js"
-            },
-            "dependencies": {}
+            }
           }
           EOF
+          
+          # Create .deployment file to tell Azure not to build
+          cat > .deployment <<EOF
+          [config]
+          SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          EOF
+          
+          # Verify standalone structure
+          echo "Deployment package structure:"
+          ls -la deploy/
+          echo "Standalone contents:"
+          ls -la deploy/standalone/ | head -20
       
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
