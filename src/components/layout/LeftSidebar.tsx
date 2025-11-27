@@ -17,12 +17,16 @@ interface LeftSidebarProps {
   isAuthenticated?: boolean;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ user, isAuthenticated = false }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticated: isAuthenticatedProp = false }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user: authUser, isAuthenticated: authIsAuthenticated, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Use auth context values, fallback to props if provided
+  const user = authUser || userProp;
+  const isAuthenticated = authIsAuthenticated || isAuthenticatedProp;
 
   const handleLogout = async () => {
     try {

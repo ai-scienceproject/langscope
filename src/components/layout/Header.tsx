@@ -17,11 +17,15 @@ interface HeaderProps {
   isAuthenticated?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, isAuthenticated = false }) => {
+const Header: React.FC<HeaderProps> = ({ user: userProp, isAuthenticated: isAuthenticatedProp = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user: authUser, isAuthenticated: authIsAuthenticated, logout } = useAuth();
+  
+  // Use auth context values, fallback to props if provided
+  const user = authUser || userProp;
+  const isAuthenticated = authIsAuthenticated || isAuthenticatedProp;
 
   const handleLogout = async () => {
     try {
