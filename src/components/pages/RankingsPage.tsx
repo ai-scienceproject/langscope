@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import RankingsTable from '@/components/rankings/RankingsTable';
 import ModelDetailsModal from '@/components/model/ModelDetailsModal';
+import JudgeSelectionModal from '@/components/battle/JudgeSelectionModal';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
@@ -28,6 +30,8 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [showJudgeModal, setShowJudgeModal] = useState(false);
+  const router = useRouter();
   
   const [filters, setFilters] = useState<FilterState>({
     costRange: [0, 100],
@@ -268,9 +272,7 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
             variant="primary"
             size="lg"
             onClick={() => {
-              // Get top 5 models
-              const top5Models = rankings.slice(0, 5).map(r => r.model.id);
-              window.location.href = `/arena/${domainSlug}?models=${top5Models.join(',')}`;
+              setShowJudgeModal(true);
             }}
           >
             Test Top 5 Models
@@ -287,6 +289,29 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
           domainSlug={domainSlug}
         />
       )}
+
+      {/* Judge Selection Modal */}
+      <JudgeSelectionModal
+        isOpen={showJudgeModal}
+        onClose={() => setShowJudgeModal(false)}
+        onSelectJudge={(judgeType, selectedModels) => {
+          const params = new URLSearchParams();
+          if (judgeType === 'human' && selectedModels && selectedModels.length > 0) {
+            params.set('judge', 'human');
+            params.set('models', selectedModels.join(','));
+            // Also include top 5 models from rankings if user selected human judge
+            const top5Models = rankings.slice(0, 5).map(r => r.model.id);
+            params.set('top5', top5Models.join(','));
+          } else if (judgeType === 'llm') {
+            params.set('judge', 'llm');
+            // Include top 5 models for LLM judge to evaluate
+            const top5Models = rankings.slice(0, 5).map(r => r.model.id);
+            params.set('top5', top5Models.join(','));
+          }
+          router.push(`/arena/${domainSlug}?${params.toString()}`);
+        }}
+        domainSlug={domainSlug}
+      />
     </Layout>
   );
 };

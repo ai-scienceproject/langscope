@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import DomainCard from '@/components/domain/DomainCard';
 import SearchBar from '@/components/ui/SearchBar';
 import Skeleton from '@/components/ui/Skeleton';
 import Button from '@/components/ui/Button';
+import JudgeSelectionModal from '@/components/battle/JudgeSelectionModal';
 import { Domain } from '@/types';
 
 export default function ArenaIndexPage() {
@@ -14,8 +15,15 @@ export default function ArenaIndexPage() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showJudgeModal, setShowJudgeModal] = useState(false);
+  const [selectedDomainSlug, setSelectedDomainSlug] = useState<string | null>(null);
+  const domainsFetchedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate fetches (React 18 Strict Mode runs effects twice in development)
+    if (domainsFetchedRef.current) return;
+    domainsFetchedRef.current = true;
+    
     const fetchDomains = async () => {
       try {
         setLoading(true);
@@ -45,11 +53,11 @@ export default function ArenaIndexPage() {
         }
       } catch (error) {
         console.error('Error fetching domains:', error);
+        // If we get here, there was an error
+        setDomains([]);
+        setLoading(false);
+        domainsFetchedRef.current = false; // Reset on error to allow retry
       }
-      
-      // If we get here, there was an error
-      setDomains([]);
-      setLoading(false);
     };
     
     fetchDomains();
@@ -61,7 +69,22 @@ export default function ArenaIndexPage() {
   );
 
   const handleStartBattle = (slug: string) => {
-    router.push(`/arena/${slug}`);
+    setSelectedDomainSlug(slug);
+    setShowJudgeModal(true);
+  };
+
+  const handleJudgeSelection = (judgeType: 'human' | 'llm', selectedModels?: string[]) => {
+    if (!selectedDomainSlug) return;
+    
+    const params = new URLSearchParams();
+    if (judgeType === 'human' && selectedModels && selectedModels.length > 0) {
+      params.set('judge', 'human');
+      params.set('models', selectedModels.join(','));
+    } else if (judgeType === 'llm') {
+      params.set('judge', 'llm');
+    }
+    
+    router.push(`/arena/${selectedDomainSlug}?${params.toString()}`);
   };
 
   return (
@@ -158,6 +181,19 @@ export default function ArenaIndexPage() {
           )}
         </div>
       </div>
+
+      {/* Judge Selection Modal */}
+      {selectedDomainSlug && (
+        <JudgeSelectionModal
+          isOpen={showJudgeModal}
+          onClose={() => {
+            setShowJudgeModal(false);
+            setSelectedDomainSlug(null);
+          }}
+          onSelectJudge={handleJudgeSelection}
+          domainSlug={selectedDomainSlug}
+        />
+      )}
     </Layout>
   );
 }

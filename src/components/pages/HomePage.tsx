@@ -91,8 +91,8 @@ const HomePage: React.FC = () => {
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10 px-3 sm:px-4 md:px-6">
-          <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-black mb-4 sm:mb-5 leading-tight">
-            Find the Perfect LLM for Your Use Case
+          <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-black mb-4 sm:mb-5 leading-tight text-3d">
+            Find the Perfect <span className="font-extrabold" style={{ color: '#A95C68', textShadow: '3px 3px 0px rgba(169,92,104,0.2), 6px 6px 0px rgba(169,92,104,0.15), 9px 9px 0px rgba(169,92,104,0.1)' }}>LLM</span> for Your Use Case
           </h1>
 
           {/* Large Search Bar */}

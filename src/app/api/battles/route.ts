@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createBattle } from '@/lib/db/services/battleService';
 import { createEvaluation } from '@/lib/db/services/evaluationService';
 import { getDomainBySlug } from '@/lib/db/services/domainService';
-import { getModelById } from '@/lib/db/services/modelService';
+import { getModelById, getModelBySlug, createModel } from '@/lib/db/services/modelService';
 import { updateRanking, getModelRanking } from '@/lib/db/services/rankingService';
 import { BattleWinner } from '@/lib/db/models/Battle';
 import TestCase from '@/lib/db/models/TestCase';
 import ModelRanking from '@/lib/db/models/ModelRanking';
 import connectDB from '@/lib/db/connect';
 import mongoose from 'mongoose';
+import Organization from '@/lib/db/models/Organization';
 
 // ELO rating system constants
 const K_FACTOR = 32; // Standard K-factor for ELO calculations
@@ -128,6 +129,45 @@ async function updateModelRankingsAfterBattle(
   }
 }
 
+// Get or create a model from OpenRouter model ID
+async function getOrCreateModelFromOpenRouterId(openRouterId: string) {
+  await connectDB();
+  
+  // Check if it's already a MongoDB ObjectId
+  if (mongoose.Types.ObjectId.isValid(openRouterId) && openRouterId.length === 24) {
+    const model = await getModelById(openRouterId);
+    if (model) return model;
+  }
+  
+  // Try to find by slug (OpenRouter ID used as slug)
+  const existingModel = await getModelBySlug(openRouterId.toLowerCase());
+  if (existingModel) {
+    return existingModel;
+  }
+  
+  // Extract provider name from OpenRouter ID (e.g., "x-ai/grok-4.1-fast:free" -> "x-ai")
+  const providerName = openRouterId.split('/')[0] || 'OpenRouter';
+  const modelName = openRouterId.split('/').pop()?.split(':')[0] || openRouterId;
+  
+  // Find or create organization
+  let organization = await Organization.findOne({ name: providerName }).lean();
+  if (!organization) {
+    organization = await Organization.create({ name: providerName });
+  }
+  const organizationId = (organization as any)._id?.toString() || (organization as any).id?.toString();
+  
+  // Create new model
+  const newModel = await createModel({
+    name: modelName,
+    slug: openRouterId.toLowerCase(),
+    organizationId: organizationId,
+    description: `OpenRouter model: ${openRouterId}`,
+    isActive: true,
+  });
+  
+  return newModel;
+}
+
 // Recalculate ranks for all models in a domain based on ELO scores
 async function recalculateRanks(domainId: string) {
   try {
@@ -184,17 +224,29 @@ export async function POST(request: NextRequest) {
     const domain = Array.isArray(domainResult) ? domainResult[0] : domainResult;
     const domainId = (domain as any)._id?.toString() || (domain as any).id?.toString();
 
-    // Get models by ID
+    // Get models by ID (handle both MongoDB ObjectIds and OpenRouter model IDs)
     let modelA, modelB;
     if (modelAId) {
-      modelA = await getModelById(modelAId);
+      // Check if it's a MongoDB ObjectId or OpenRouter ID
+      if (mongoose.Types.ObjectId.isValid(modelAId) && modelAId.length === 24) {
+        modelA = await getModelById(modelAId);
+      } else {
+        // It's an OpenRouter model ID, get or create the model
+        modelA = await getOrCreateModelFromOpenRouterId(modelAId);
+      }
     }
     if (modelBId) {
-      modelB = await getModelById(modelBId);
+      // Check if it's a MongoDB ObjectId or OpenRouter ID
+      if (mongoose.Types.ObjectId.isValid(modelBId) && modelBId.length === 24) {
+        modelB = await getModelById(modelBId);
+      } else {
+        // It's an OpenRouter model ID, get or create the model
+        modelB = await getOrCreateModelFromOpenRouterId(modelBId);
+      }
     }
     
     if (!modelA || !modelB) {
-      return NextResponse.json({ error: 'Model not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Model not found or could not be created' }, { status: 404 });
     }
     
     const modelAIdStr = (modelA as any)._id?.toString() || (modelA as any).id?.toString();

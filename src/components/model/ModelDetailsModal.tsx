@@ -196,8 +196,9 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={details?.model.name || 'Model Details'}
+      title=""
       size="lg"
+      showCloseButton={false}
     >
       {loading ? (
         <div className="p-8 text-center">
@@ -208,30 +209,42 @@ const ModelDetailsModal: React.FC<ModelDetailsModalProps> = ({
         <div>
           {/* Header with Model Info */}
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <Avatar
-                src={details.model.logo}
-                alt={details.model.provider}
-                size="md"
-                shape="square"
-                fallback={details.model.provider.charAt(0)}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-lg font-bold text-gray-900 truncate">{details.model.name}</h3>
-                  {details.model.verified && (
-                    <Badge label="Verified" variant="success" size="sm" />
-                  )}
-                  <Badge
-                    label={details.model.type === 'open-source' ? 'Open Source' : 
-                           details.model.type === 'api-only' ? 'API Only' : 'Proprietary'}
-                    variant="default"
-                    size="sm"
-                  />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Avatar
+                  src={details.model.logo}
+                  alt={details.model.provider}
+                  size="md"
+                  shape="square"
+                  fallback={details.model.provider.charAt(0)}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg font-bold text-gray-900 truncate">{details.model.name}</h3>
+                    {details.model.verified && (
+                      <Badge label="Verified" variant="success" size="sm" />
+                    )}
+                    <Badge
+                      label={details.model.type === 'open-source' ? 'Open Source' : 
+                             details.model.type === 'api-only' ? 'API Only' : 'Proprietary'}
+                      variant="default"
+                      size="sm"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 truncate">{details.model.provider}</p>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-1">{details.model.description}</p>
                 </div>
-                <p className="text-xs text-gray-600 mt-1 truncate">{details.model.provider}</p>
-                <p className="text-xs text-gray-500 mt-1 line-clamp-1">{details.model.description}</p>
               </div>
+              {/* Close Button */}
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                aria-label="Close modal"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
 

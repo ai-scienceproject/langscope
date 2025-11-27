@@ -46,6 +46,8 @@ export async function GET(
         },
         stats: {
           rankings: stats.rankings,
+          evaluationRankings: stats.evaluationRankings || [],
+          currentBattleRankings: stats.currentBattleRankings || [], // Only the 2 models from current battle
           totalBattles: stats.totalBattles,
           winLossMatrix: stats.winLossMatrix,
         },

@@ -3,6 +3,7 @@ import { getModelById, getModelBySlug } from '@/lib/db/services/modelService';
 import { getModelRanking } from '@/lib/db/services/rankingService';
 import { getDomainBySlug } from '@/lib/db/services/domainService';
 import { getBattleHistory } from '@/lib/db/services/battleService';
+import { getOrganizationLogo } from '@/lib/utils/modelIcons';
 
 export async function GET(
   request: NextRequest,
@@ -87,12 +88,15 @@ export async function GET(
     // Transform to match frontend expectations
     const modelId = (model as any)._id?.toString() || (model as any).id?.toString() || id;
     const modelData = model as any;
+    const organizationName = (model.organizationId as any)?.name || 'Unknown';
+    const organizationLogo = getOrganizationLogo(organizationName);
+    
     const transformedModel = {
       id: modelId,
       name: model.name,
       slug: model.slug,
-      provider: (model.organizationId as any)?.name || 'Unknown',
-      logo: '🤖',
+      provider: organizationName,
+      logo: organizationLogo,
       description: model.description || '',
       type: 'api-only' as const,
       contextLength: 128000,

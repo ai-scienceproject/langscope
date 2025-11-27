@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import type { ModelRanking } from '@/types';
+import { getOrganizationLogo } from '@/lib/utils/modelIcons';
 
 interface ResultsDashboardPageProps {
   evaluationId?: string;
@@ -25,6 +26,7 @@ interface Insight {
 const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ evaluationId }) => {
   const searchParams = useSearchParams();
   const domainSlug = searchParams.get('domain') || 'code-generation';
+  const judgeModelId = searchParams.get('judgeModelId'); // Get judge model ID from URL if available
   
   const [results, setResults] = useState<{
     userRank: number;
@@ -33,6 +35,8 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
     actualScore: number;
     predictedScore: number;
     rankings: ModelRanking[];
+    evaluationRankings: ModelRanking[]; // Models tested in this evaluation
+    currentBattleRankings: ModelRanking[]; // Only the 2 models from current battle
     domainName: string;
     totalBattles: number;
     modelsTested: number;
@@ -40,6 +44,7 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
     confidenceBefore: number;
     confidenceAfter: number;
     predictionAccuracy: number;
+    judgeModel?: { id: string; name: string; provider: string; logo: string }; // Judge model info for LLM evaluations
   } | null>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +65,8 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
           actualScore: 0,
           predictedScore: 0,
           rankings: [],
+          evaluationRankings: [],
+          currentBattleRankings: [],
           domainName,
           totalBattles: 0,
           modelsTested: 0,
@@ -96,6 +103,8 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
                 actualScore: rankings.length > 0 ? rankings[0].score : 0,
                 predictedScore: rankings.length > 0 ? rankings[0].score : 0,
                 rankings: rankings,
+                evaluationRankings: [], // No evaluation-specific data for fallback
+                currentBattleRankings: [],
                 domainName,
                 totalBattles: rankingsResult.domain?.battleCount || rankings.reduce((sum: number, r: any) => sum + (r.battleCount || 0), 0),
                 modelsTested: rankings.length,
@@ -144,6 +153,8 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
             actualScore: 0,
             predictedScore: 0,
             rankings: [],
+            evaluationRankings: [],
+            currentBattleRankings: [],
             domainName,
             totalBattles: 0,
             modelsTested: 0,
@@ -179,6 +190,8 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
                 actualScore: rankings.length > 0 ? rankings[0].score : 0,
                 predictedScore: rankings.length > 0 ? rankings[0].score : 0,
                 rankings: rankings,
+                evaluationRankings: [], // No evaluation-specific data for fallback
+                currentBattleRankings: [],
                 domainName,
                 totalBattles: rankingsResult.domain?.battleCount || rankings.reduce((sum: number, r: any) => sum + (r.battleCount || 0), 0),
                 modelsTested: rankings.length,
@@ -230,8 +243,41 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
           
           // Calculate user rank (assuming first model is the user's)
           const rankings = stats.rankings || [];
+          const evaluationRankings = stats.evaluationRankings || [];
+          const currentBattleRankings = stats.currentBattleRankings || [];
           const userRank = rankings.length > 0 ? rankings[0].rank : 1;
           const userModel = rankings.length > 0 ? rankings[0].model : null;
+          
+          // Use actual evaluation data
+          const totalBattles = evalData.totalBattles || stats.totalBattles || 0;
+          const modelsTested = evalData.modelsTested || evaluationRankings.length || stats.rankings?.length || 0;
+          
+          // Fetch judge model info if judgeModelId is in URL
+          let judgeModelInfo = undefined;
+          if (judgeModelId) {
+            try {
+              // Try to get model info from OpenRouter
+              const judgeModelResponse = await fetch('/api/openrouter/models');
+              if (judgeModelResponse.ok) {
+                const judgeModelResult = await judgeModelResponse.json();
+                if (judgeModelResult.data) {
+                  const judgeModel = judgeModelResult.data.find((m: any) => m.id === judgeModelId);
+                  if (judgeModel) {
+                    const provider = judgeModel.provider || judgeModelId.split('/')[0] || 'Unknown';
+                    const logo = getOrganizationLogo(provider);
+                    judgeModelInfo = {
+                      id: judgeModel.id,
+                      name: judgeModel.name || judgeModel.id,
+                      provider: provider,
+                      logo: logo,
+                    };
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching judge model info:', error);
+            }
+          }
           
           setResults({
             userRank,
@@ -240,13 +286,16 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
             actualScore: rankings.length > 0 ? rankings[0].score : 0,
             predictedScore: rankings.length > 0 ? rankings[0].score - 50 : 0,
             rankings: rankings,
+            evaluationRankings: evaluationRankings,
+            currentBattleRankings: currentBattleRankings,
             domainName,
-            totalBattles: stats.totalBattles || evalData.totalBattles || 0,
-            modelsTested: stats.rankings?.length || evalData.modelsTested || 0,
+            totalBattles: totalBattles,
+            modelsTested: modelsTested,
             winLossMatrix: stats.winLossMatrix || {},
             confidenceBefore: 75,
             confidenceAfter: 88,
             predictionAccuracy: 70,
+            judgeModel: judgeModelInfo,
           });
           
           // Generate insights from the data
@@ -260,13 +309,22 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
               color: 'green',
             });
           }
-          if (stats.totalBattles > 0) {
+          if (totalBattles > 0) {
             generatedInsights.push({
               id: '2',
               title: 'Battle Activity',
-              description: `${stats.totalBattles} battles completed across ${evalData.modelsTested} models`,
+              description: `${totalBattles} battles completed across ${modelsTested} models`,
               icon: '⚔️',
               color: 'blue',
+            });
+          }
+          if (evaluationRankings.length > 0) {
+            generatedInsights.push({
+              id: '3',
+              title: 'Evaluation Results',
+              description: `${evaluationRankings.length} models evaluated in this session`,
+              icon: '📊',
+              color: 'purple',
             });
           }
           setInsights(generatedInsights);
@@ -295,6 +353,8 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
           confidenceAfter: 0,
           predictionAccuracy: 0,
           rankings: [],
+          evaluationRankings: [],
+          currentBattleRankings: [],
         });
         setInsights([]);
         setLoading(false);
@@ -392,7 +452,89 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
               </div>
             </div>
 
-            {/* Full Rankings Table */}
+            {/* Judge Model Info - Show if LLM judge was used */}
+            {results.judgeModel && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <Avatar
+                      src={results.judgeModel.logo}
+                      alt={results.judgeModel.provider}
+                      size="md"
+                      shape="square"
+                      fallback={results.judgeModel.provider.charAt(0)}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900">Judge Model</p>
+                    <p className="text-lg font-semibold text-blue-800">{results.judgeModel.name}</p>
+                    <p className="text-xs text-blue-600">{results.judgeModel.provider}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Evaluation Standings - Models tested in this evaluation */}
+            {results.currentBattleRankings && results.currentBattleRankings.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Current Battle Standings</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Rank</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Model</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Score</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Battles</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Win Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {results.currentBattleRankings.map((ranking) => (
+                        <tr key={ranking.model.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <span className="text-lg font-bold text-primary-600">
+                              #{ranking.rank}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                src={ranking.model.logo}
+                                alt={ranking.model.provider}
+                                size="md"
+                                shape="square"
+                                fallback={ranking.model.provider.charAt(0)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">
+                                  {ranking.model.name}
+                                </p>
+                                <p className="text-sm text-gray-500 truncate">{ranking.model.provider}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-lg font-semibold text-gray-900">{ranking.score}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-600">{ranking.battleCount || 0}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-900">{ranking.winRate.toFixed(1)}%</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Full Rankings Table - All Models */}
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Overall Rankings</h3>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -408,11 +550,12 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
                 <tbody className="divide-y divide-gray-200">
                   {results.rankings.map((ranking) => {
                     const isUserModel = ranking.rank === results.userRank;
+                    const isInEvaluation = results.evaluationRankings?.some(er => er.model.id === ranking.model.id);
                     const predictedRankForModel = ranking.rank === results.userRank ? results.predictedRank : ranking.rank;
                     return (
                       <tr
                         key={ranking.model.id}
-                        className={isUserModel ? 'bg-primary-50' : 'hover:bg-gray-50'}
+                        className={`${isUserModel ? 'bg-primary-50' : isInEvaluation ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                       >
                         <td className="px-6 py-4">
                           <span className={`text-2xl font-bold ${isUserModel ? 'text-primary-700' : 'text-gray-900'}`}>
@@ -432,6 +575,11 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
                             <div className="flex-1 min-w-0">
                               <p className={`font-medium ${isUserModel ? 'text-primary-900' : 'text-gray-900'} truncate`}>
                                 {ranking.model.name}
+                                {isInEvaluation && (
+                                  <span className="ml-2 text-xs bg-primary-600 text-white px-2 py-0.5 rounded">
+                                    In This Evaluation
+                                  </span>
+                                )}
                               </p>
                               <p className="text-sm text-gray-500 truncate">{ranking.model.provider}</p>
                             </div>

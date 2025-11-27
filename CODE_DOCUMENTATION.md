@@ -25,7 +25,8 @@
 ### Tech Stack
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes (Serverless)
-- **Database**: MongoDB with Mongoose ODM
+- **Database**: MongoDB with Mongoose ODM (Azure Cosmos DB for MongoDB in production)
+- **Authentication**: Supabase Auth (Email/Password + OAuth: Google, GitHub)
 - **State Management**: React Context API, Zustand (for some components)
 - **Styling**: Tailwind CSS with custom design system
 
@@ -224,7 +225,9 @@ async function connectDB(): Promise<typeof mongoose> {
 
 #### 8. User (`src/lib/db/models/User.ts`)
 
-**Purpose**: Represents application users.
+**Purpose**: Represents application users (legacy MongoDB model).
+
+**Note**: As of the latest update, user authentication is handled by **Supabase Auth**. Users are stored in Supabase, not MongoDB. This model may still exist for backward compatibility or future use.
 
 **Fields**:
 - `email`: User email (unique)
@@ -232,6 +235,8 @@ async function connectDB(): Promise<typeof mongoose> {
 - `name`: User name
 - `role`: User role (user, admin, judge)
 - `createdAt`, `updatedAt`: Timestamps
+
+**Current Authentication**: See [Authentication](#authentication) section below.
 
 ---
 
@@ -478,7 +483,10 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 2. Validates MongoDB ObjectId
 3. Calls `getEvaluationStats()` service function
 4. Calculates rankings, win/loss matrix, and other metrics
-5. Returns comprehensive evaluation data
+5. Returns comprehensive evaluation data including:
+   - `evaluationRankings`: Only models that participated in this evaluation
+   - `currentBattleRankings`: Only the 2 models from the latest battle
+   - `judgeModel`: Judge model information (if LLM judge was used)
 
 **Response**:
 ```json
@@ -488,11 +496,44 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
     "domainId": "...",
     "status": "completed",
     "totalBattles": 10,
-    "completedBattles": 10
+    "completedBattles": 10,
+    "modelsTested": 5
   },
   "rankings": [...],
+  "evaluationRankings": [...],  // Only models in this evaluation
+  "currentBattleRankings": [...],  // Only 2 models from latest battle
   "winLossMatrix": {...},
   "stats": {...}
+}
+```
+
+#### POST `/api/battles/evaluate`
+
+**Purpose**: Evaluate a battle using an LLM judge.
+
+**Implementation** (`src/app/api/battles/evaluate/route.ts`):
+1. Receives battle data: `question`, `modelAId`, `modelBId`, `responseA`, `responseB`, `judgeModelId`
+2. Calls OpenRouter API to get judge model response
+3. Parses judge response to determine winner
+4. Returns winner (`MODEL_A`, `MODEL_B`, or `TIE`)
+
+**Request Body**:
+```json
+{
+  "question": "Test question",
+  "modelAId": "...",
+  "modelBId": "...",
+  "responseA": "Response from model A",
+  "responseB": "Response from model B",
+  "judgeModelId": "openai/gpt-4"
+}
+```
+
+**Response**:
+```json
+{
+  "winner": "MODEL_A",
+  "judgeResponse": "Full judge response text"
 }
 ```
 
@@ -619,15 +660,17 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 #### ArenaBattlePage (`src/components/pages/ArenaBattlePage.tsx`)
 
-**Purpose**: Interactive arena battle interface.
+**Purpose**: Interactive arena battle interface with support for both manual voting and LLM judge evaluation.
 
 **Features**:
 - Battle counter (Battle X of Y)
 - Two model comparison
-- Vote selection (Model A, Model B, Tie)
+- Vote selection (Model A, Model B, Tie) - Manual mode
+- LLM Judge mode - Automatic evaluation using another LLM
 - Test case context display
 - Live leaderboard sidebar
 - Submit & Next button
+- Progress tracking for LLM evaluations
 
 **Data Flow**:
 
@@ -635,8 +678,9 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
    - Fetches standings from `/api/arena/[domain]/standings`
    - Selects two random models for first battle
    - Sets test case context
+   - Determines evaluation mode (manual or LLM judge)
 
-2. **Battle Submission** (`handleSubmit`):
+2. **Manual Battle Submission** (`handleSubmit`):
    - Validates vote selection
    - Calls `/api/battles` POST endpoint with:
      - Domain slug
@@ -651,41 +695,69 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
    - Advances battle index
    - Redirects to results page after all battles
 
-3. **Model Selection**:
+3. **LLM Judge Evaluation** (`startLLMEvaluation`):
+   - Selects two models at the start (same models for all questions)
+   - For each question:
+     - Generates responses from both models via `/api/generate`
+     - Evaluates battle using `/api/battles/evaluate` with judge model
+     - Creates battle with judge-determined winner
+     - Updates progress (X of Y battles completed)
+   - Uses `llmEvaluationStartedRef` to prevent duplicate evaluations
+   - Includes 60-second timeouts for API calls
+   - Redirects to results page with `judgeModelId` query parameter
+   - Ensures same two models are used throughout the evaluation
+
+4. **Model Selection**:
    - On battle index change, selects two new random models
    - Ensures models are different
+   - In LLM judge mode, models are selected once at the start
 
 **State**:
 - `battleIndex`: Current battle number (1-10)
 - `totalBattles`: Total battles in session (10)
 - `selectedVote`: Selected winner ('A', 'B', or 'Tie')
 - `submitting`: Submission loading state
-- `responseA`, `responseB`: Model responses (currently placeholder)
+- `responseA`, `responseB`: Model responses
 - `evaluationId`: Current evaluation ID
+- `judgeModelId`: Judge model ID for LLM evaluations
+- `isLLMEvaluation`: Whether LLM judge mode is active
+- `llmEvaluationProgress`: Progress tracking for LLM evaluation
 - `standings`: Live standings array
 - `currentModelA`, `currentModelB`: Current battle models
 - `testCaseContext`: Current test case description
 
 #### ResultsDashboardPage (`src/components/pages/ResultsDashboardPage.tsx`)
 
-**Purpose**: Displays evaluation results and statistics.
+**Purpose**: Displays evaluation results and statistics with support for evaluation-specific rankings and judge model display.
 
 **Features**:
 - Evaluation summary (battles, models tested)
+- Judge model information (if LLM judge was used)
+- Overall rankings (all models in domain)
+- Evaluation rankings (only models tested in this evaluation)
+- Current battle standings (only the 2 models from latest battle)
 - Model performance metrics
-- Rankings table
 - Win/loss matrix visualization
 - Insights section
 
 **Data Flow**:
-1. Extracts `evaluationId` from URL parameters
+1. Extracts `evaluationId` and `judgeModelId` from URL parameters
 2. Handles Next.js 15 async params
 3. Fetches evaluation data from `/api/evaluations/[id]`
-4. If evaluation ID is invalid/demo, falls back to domain-based rankings
-5. Transforms and displays data
+4. If `judgeModelId` is present, fetches judge model details from `/api/models`
+5. If evaluation ID is invalid/demo, falls back to domain-based rankings
+6. Transforms and displays data with three ranking views:
+   - **Overall Rankings**: All models in the domain
+   - **Evaluation Rankings**: Only models that participated in this evaluation
+   - **Current Battle Standings**: Only the 2 models from the latest battle
 
 **State**:
-- `results`: Evaluation results object
+- `results`: Evaluation results object containing:
+  - `rankings`: Overall domain rankings
+  - `evaluationRankings`: Models tested in this evaluation
+  - `currentBattleRankings`: Only the 2 models from current battle
+  - `judgeModel`: Judge model info (if LLM judge was used)
+  - `totalBattles`, `modelsTested`: Evaluation statistics
 - `insights`: Array of insight objects
 - `loading`: Loading state
 - `error`: Error message
@@ -876,16 +948,27 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
    - Calculates rankings based on battle results
    - Builds win/loss matrix
    - Calculates aggregate statistics
+   - **Filters evaluation rankings** to only include models that participated in battles
+   - **Identifies current battle** and creates `currentBattleRankings` with only those 2 models
+   - Handles both populated and non-populated model references
+   - Creates placeholder rankings for models that participated but don't have `ModelRanking` entries
 
 3. **`createEvaluation(data)`**: Create a new evaluation document
 
 **`getEvaluationStats()` Implementation**:
 - Fetches evaluation and battles
+- Extracts unique model IDs from battles (handles both populated and non-populated cases)
 - Groups battles by model pairs
 - Calculates wins/losses/ties for each model
 - Builds win/loss matrix (model vs model)
-- Calculates ELO scores (if not already in rankings)
-- Returns comprehensive stats object
+- Filters `transformedRankings` to create `evaluationRankings` (only models in battles)
+- Identifies latest battle and extracts its 2 model IDs
+- Creates `currentBattleRankings` with only those 2 models
+- For models without existing `ModelRanking` entries, fetches model details and creates placeholder rankings
+- Returns comprehensive stats object with:
+  - `rankings`: All domain rankings
+  - `evaluationRankings`: Only models tested in this evaluation
+  - `currentBattleRankings`: Only the 2 models from latest battle
 
 ---
 
@@ -901,12 +984,14 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Maps organization names to logo file paths in `/public/logos/`
 - Returns path like `/logos/openai.svg`
 - Falls back to default logo if organization not found
+- Handles various organization name formats (e.g., "x-ai" for X.AI)
 
 **Supported Organizations**:
 - OpenAI → `/logos/openai.svg`
 - Anthropic → `/logos/anthropic.svg`
 - Google → `/logos/google.svg`
 - Meta → `/logos/meta.svg`
+- x-ai / X.AI → `/logos/x-ai.svg`
 - And many more...
 
 ### General Utils (`src/lib/utils.ts`)
@@ -957,6 +1042,60 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - `delete<T>(url, config?)`: DELETE request
 
 ---
+
+## Authentication
+
+### Supabase Auth Integration
+
+**Purpose**: Handles user authentication using Supabase Auth service.
+
+**Implementation** (`src/contexts/AuthContext.tsx`):
+- Uses Supabase client (`@supabase/supabase-js`) for authentication
+- Supports email/password and OAuth (Google, GitHub)
+- Manages user session state
+- Converts Supabase user objects to application `User` type
+
+**Key Functions**:
+- `login(email, password)`: Email/password login
+- `signup(data)`: User registration with email/password
+- `logout()`: Sign out current user
+- `signInWithGoogle()`: OAuth login with Google
+- `signInWithGitHub()`: OAuth login with GitHub
+- `refreshUser()`: Refresh user data from session
+
+**Supabase Client Files**:
+- `src/lib/supabase/client.ts`: Browser-side Supabase client
+- `src/lib/supabase/server.ts`: Server-side Supabase client (for API routes)
+- `src/lib/supabase/middleware.ts`: Middleware helper for session management
+
+**Middleware Integration** (`src/middleware.ts`):
+- Protects routes that require authentication
+- Updates Supabase session on each request
+- Redirects unauthenticated users to `/login`
+- Allows public routes: `/`, `/about`, `/login`, `/signup`, `/api/*`
+
+**OAuth Callback** (`src/app/auth/callback/route.ts`):
+- Handles OAuth redirects from providers
+- Exchanges OAuth code for Supabase session
+- Redirects to home page after successful authentication
+
+**Environment Variables**:
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+
+**Features**:
+- ✅ Email/password authentication
+- ✅ OAuth (Google, GitHub)
+- ✅ Session management
+- ✅ Protected routes
+- ✅ User metadata (name, role, avatar)
+- ✅ Graceful handling when Supabase is not configured
+
+**Migration Notes**:
+- NextAuth has been completely removed
+- AuthContext API remains the same for backward compatibility
+- Users are stored in Supabase, not MongoDB
+- Sessions are managed by Supabase
 
 ## Configuration
 
@@ -1037,21 +1176,58 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 5. **Response**: Returns comprehensive model data
 6. **Display**: Modal shows tabs with model information
 
+### LLM Judge Evaluation Flow
+
+1. **User Action**: User selects "LLM Judge" mode in ArenaBattlePage
+2. **Model Selection**: Two models are selected at the start (same models for all questions)
+3. **Judge Selection**: User selects a judge model from available models
+4. **For Each Question**:
+   a. **Generate Responses**: 
+      - Calls `/api/generate` for both models (with 60s timeout)
+      - Stores responses in state
+   b. **Evaluate Battle**:
+      - Calls `/api/battles/evaluate` with question, responses, and judge model
+      - Judge model evaluates responses via OpenRouter API
+      - Returns winner (`MODEL_A`, `MODEL_B`, or `TIE`)
+   c. **Create Battle**:
+      - Calls `/api/battles` POST with judge-determined winner
+      - Updates evaluation ID from response
+      - Updates progress counter
+5. **Completion**: After all questions are evaluated
+   a. Redirects to `/results/[evaluationId]?judgeModelId=[judgeId]`
+   b. Results page displays judge model information
+   c. Shows evaluation rankings and current battle standings
+6. **Error Handling**: 
+   - Timeouts (60s) prevent hanging
+   - Errors are logged and progress continues
+   - Failed battles are still saved with error status
+
 ---
 
 ## Environment Variables
 
 ### Required Variables
 
-- `DATABASE_URL`: MongoDB connection string
+- `DATABASE_URL` or `MONGODB_URI`: MongoDB connection string
   - Format: `mongodb://localhost:27017/langscope` (local)
   - Format: `mongodb+srv://user:pass@cluster.mongodb.net/langscope` (Atlas)
+  - Format: `mongodb://langscope-mongodb.mongo.cosmos.azure.com:10255/...` (Azure Cosmos DB)
+
+### Authentication Variables (Supabase)
+
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+  - Format: `https://your-project.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+  - Found in Supabase Dashboard → Settings → API
+
+**Note**: If Supabase variables are not set, authentication features will be disabled gracefully.
 
 ### Optional Variables
 
 - `NEXT_PUBLIC_API_URL`: API base URL (default: `http://localhost:3001`)
 - `NEXT_PUBLIC_WS_URL`: WebSocket URL (default: `ws://localhost:3001`)
 - `NODE_ENV`: Environment (development, production)
+- `OPENROUTER_API_KEY`: API key for OpenRouter (for LLM judge evaluations)
 
 ---
 
@@ -1112,21 +1288,52 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 ## Security Considerations
 
-1. **Password Hashing**: User passwords are hashed (bcryptjs)
+1. **Authentication**: Supabase Auth handles password hashing and session management
 2. **Input Validation**: API routes validate input data
 3. **ObjectId Validation**: MongoDB ObjectIds are validated before queries
 4. **CORS**: Configured for allowed origins
 5. **Environment Variables**: Sensitive data stored in environment variables
+6. **Route Protection**: Middleware protects authenticated routes
+7. **OAuth Security**: OAuth flows handled securely by Supabase
+8. **API Key Protection**: OpenRouter API key stored server-side only
 
 ---
 
+## Recent Updates
+
+### LLM Judge Evaluation
+- ✅ Automatic battle evaluation using another LLM as judge
+- ✅ Support for judge model selection
+- ✅ Progress tracking during LLM evaluations
+- ✅ Judge model information displayed on results page
+- ✅ Timeout handling for API calls (60 seconds)
+
+### Evaluation Rankings
+- ✅ **Evaluation Rankings**: Shows only models tested in a specific evaluation
+- ✅ **Current Battle Standings**: Shows only the 2 models from the latest battle
+- ✅ Improved model filtering to ensure accurate rankings
+- ✅ Support for models without existing `ModelRanking` entries
+
+### Authentication Migration
+- ✅ Migrated from custom token-based auth to Supabase Auth
+- ✅ Email/password authentication
+- ✅ OAuth support (Google, GitHub)
+- ✅ Session management via middleware
+- ✅ Protected routes
+- ✅ Graceful degradation when Supabase is not configured
+
+### Model Icons
+- ✅ Added support for x-ai/X.AI organization logos
+- ✅ Improved organization name matching
+
 ## Future Enhancements
 
-1. **OAuth Integration**: Google and Facebook login (currently TODO)
-2. **Real-time Updates**: WebSocket support for live standings
-3. **Advanced Filtering**: More sophisticated search and filter options
-4. **Export Features**: Export rankings and battle data
-5. **Analytics Dashboard**: More detailed analytics and visualizations
+1. **Real-time Updates**: WebSocket support for live standings
+2. **Advanced Filtering**: More sophisticated search and filter options
+3. **Export Features**: Export rankings and battle data
+4. **Analytics Dashboard**: More detailed analytics and visualizations
+5. **Additional OAuth Providers**: More social login options
+6. **Vector Search**: Leverage Azure Cosmos DB vector search capabilities
 
 ---
 

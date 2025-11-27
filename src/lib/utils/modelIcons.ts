@@ -31,7 +31,7 @@ export const getOrganizationLogo = (organizationName: string): string => {
   if (name.includes('huggingface') || name.includes('hugging face')) {
     return '/logos/huggingface.ico';
   }
-  if (name.includes('xai') || name === 'x.ai') {
+  if (name.includes('xai') || name === 'x.ai' || name === 'x-ai' || name.includes('x-ai')) {
     return '/logos/xai.ico';
   }
   if (name.includes('baidu')) {

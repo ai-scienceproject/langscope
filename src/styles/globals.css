@@ -131,3 +131,14 @@
   pointer-events: none !important;
 }
 
+/* 3D Text Effect */
+.text-3d {
+  text-shadow: 
+    3px 3px 0px rgba(0,0,0,0.1),
+    6px 6px 0px rgba(0,0,0,0.08),
+    9px 9px 0px rgba(0,0,0,0.05),
+    12px 12px 0px rgba(0,0,0,0.03);
+  transform: perspective(1000px) rotateX(2deg);
+  transform-style: preserve-3d;
+}
+
