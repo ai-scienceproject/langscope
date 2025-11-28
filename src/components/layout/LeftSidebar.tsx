@@ -29,6 +29,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
   const user = authUser || userProp;
   const isAuthenticated = authIsAuthenticated || isAuthenticatedProp;
 
+  // Auto-collapse when not on home page
+  React.useEffect(() => {
+    if (pathname !== '/') {
+      setCollapsed(true);
+    } else {
+      setCollapsed(false);
+    }
+  }, [pathname]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -78,14 +87,17 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-black text-white shadow-lg hover:bg-dark-gray transition-colors"
+        className={cn(
+          "lg:hidden fixed z-50 p-2 rounded-lg bg-white text-black shadow-lg hover:bg-gray-100 transition-all border border-gray-200",
+          mobileMenuOpen ? "top-4 right-4" : "top-4 left-4"
+        )}
         aria-label="Toggle menu"
       >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           {mobileMenuOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           )}
         </svg>
       </button>
@@ -99,22 +111,32 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       )}
 
       <aside className={cn(
-        'bg-white border-r border-gray-200 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 shadow-sm z-40',
+        'border-r border-gray-200 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 shadow-sm z-40',
+        'bg-[#F5F3FF]', // Light lavender background
         collapsed ? 'w-12' : 'w-64 sm:w-72',
-        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        'lg:h-auto lg:min-h-screen lg:max-h-screen', // Ensure sidebar doesn't extend beyond viewport on desktop
+        'overflow-hidden' // Prevent scrollbars
       )}>
       {/* Logo Section */}
-      <div className="p-4 sm:p-6 border-b border-gray-200/80">
-        <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3">
-          <Image src="/logos/langscope.png" alt="Langscope" width={40} height={40} className="w-10 h-10" />
-          {!collapsed && (
-            <span className="text-xl font-bold text-black">Langscope</span>
+      <div className={cn("p-4 sm:p-4 pb-2", collapsed && "flex justify-center px-2")}>
+        <Link href="/" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
+          <Image 
+            src="/logos/langscope.png" 
+            alt="LangScope" 
+            width={48} 
+            height={48} 
+            className={cn("object-contain flex-shrink-0", collapsed ? "w-10 h-10" : "w-12 h-12")}
+            priority
+          />
+          {(!collapsed || mobileMenuOpen) && (
+            <span className="text-2xl font-bold text-black">LangScope</span>
           )}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto min-h-0">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -126,7 +148,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 group',
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'bg-light-gray text-black shadow-sm border border-gray-200'
+                  ? 'text-black'
                   : 'text-dark-gray hover:bg-light-gray hover:text-black'
               )}
               title={collapsed ? item.name : undefined}
@@ -145,38 +167,35 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
         })}
       </nav>
 
-      {/* User Section */}
-      {isAuthenticated && user ? (
+      {/* User Section - Completely hidden when collapsed */}
+      {!collapsed && (
         <>
-          {/* Upgrade Section */}
-          {!collapsed && (
-            <div className="px-3 pt-4 pb-2 border-t border-gray-200/80">
-              <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
-                <div className="text-xs font-semibold text-black mb-1">Current plan</div>
-                <div className="text-xs text-dark-gray mb-3">Free trial</div>
-                <button className="w-full bg-black text-white text-xs font-semibold py-2 px-3 rounded-lg hover:bg-dark-gray transition-all duration-200 shadow-sm">
-                  Upgrade to Pro
-                </button>
-                <p className="text-xs text-dark-gray mt-2 leading-tight">get the latest and exclusive features</p>
+          {isAuthenticated && user ? (
+            <>
+              {/* Upgrade Section */}
+              <div className="px-3 pt-4 pb-2">
+                <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
+                  <div className="text-xs font-semibold text-black mb-1">Current plan</div>
+                  <div className="text-xs text-dark-gray mb-3">Free trial</div>
+                  <button className="w-full bg-[#E8E3FF] text-[rgb(29,61,60)] text-xs font-semibold py-2 px-3 rounded-lg hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30">
+                    Upgrade to Pro
+                  </button>
+                  <p className="text-xs text-dark-gray mt-2 leading-tight">get the latest and exclusive features</p>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* User Profile */}
-          <div className="px-3 pt-2 pb-1 border-t border-gray-200/80">
-            <div className={cn(
-              "flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-light-gray transition-colors cursor-pointer group",
-              collapsed && 'justify-center'
-            )}>
-              <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white text-xs font-semibold shadow-sm flex-shrink-0">
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-full h-full rounded-lg object-cover" />
-                ) : (
-                  user.name.charAt(0).toUpperCase()
-                )}
-              </div>
-              {!collapsed && (
-                <>
+              {/* User Profile */}
+              <div className="px-3 pt-2 pb-1">
+                <div className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-light-gray transition-colors cursor-pointer group"
+                )}>
+                  <div className="w-8 h-8 rounded-lg bg-[#E8E3FF] flex items-center justify-center text-[rgb(29,61,60)] text-xs font-semibold shadow-sm flex-shrink-0">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      user.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold text-black truncate">{user.name}</div>
                     <div className="text-[10px] text-dark-gray truncate">{user.email}</div>
@@ -189,44 +208,36 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </>
-              )}
-            </div>
-          </div>
+                </div>
+              </div>
 
-          {/* Logout */}
-          <div className="px-3 pb-3 pt-1">
-            <button
-              onClick={handleLogout}
-              className={cn(
-                "flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group",
-                collapsed && 'justify-center'
-              )}
-              title={collapsed ? 'Logout' : undefined}
-            >
-              <svg
-                className="w-4 h-4 text-dark-gray group-hover:text-red-500 transition-colors"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              {!collapsed && <span>Logout</span>}
-            </button>
-          </div>
-        </>
-      ) : (
-        /* Login/Signup Section */
-        <div className="px-3 pb-3 border-t border-gray-200/80 pt-3 space-y-1.5">
-          {!collapsed ? (
-            <>
+              {/* Logout */}
+              <div className="px-3 pb-3 pt-1">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+                >
+                  <svg
+                    className="w-4 h-4 text-dark-gray group-hover:text-red-500 transition-colors"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Login/Signup Section */
+            <div className="px-3 pb-3 pt-3 space-y-1.5">
               <button
                 onClick={() => {
                   router.push('/login');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                className="w-full px-2 py-1.5 rounded-lg text-xs font-bold text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
               >
                 Log in
               </button>
@@ -235,62 +246,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   router.push('/signup');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg text-xs font-semibold text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
+                className="w-full px-2 py-1.5 rounded-lg text-xs font-bold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30 flex items-center justify-center"
               >
                 Sign up
               </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  router.push('/login');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full p-2 rounded-lg text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
-                title="Log in"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-              </button>
-              <button
-                onClick={() => {
-                  router.push('/signup');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full p-2 rounded-lg text-white bg-black hover:bg-dark-gray transition-all duration-200 shadow-sm flex items-center justify-center"
-                title="Sign up"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
-
-      {/* Collapse Toggle - Hidden on mobile */}
-      <div className="hidden lg:block px-3 pb-2 border-t border-gray-200/80 pt-1.5">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center p-1 rounded text-dark-gray hover:bg-light-gray hover:text-black transition-all duration-200 group"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <svg
-            className={cn(
-              "w-3 h-3 transition-transform duration-300",
-              collapsed && "rotate-180"
-            )}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-      </div>
 
     </aside>
     </>

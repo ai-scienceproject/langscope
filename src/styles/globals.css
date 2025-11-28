@@ -8,10 +8,34 @@
   }
   
   body {
-    @apply bg-light-gray text-black;
+    @apply bg-light-gray;
+    color: rgb(29, 61, 60);
+    font-family: var(--font-manrope), sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Override all text colors to match Use Case color */
+  * {
+    color: rgb(29, 61, 60);
+  }
+  
+  /* Preserve white text for specific elements */
+  button[class*="bg-black"],
+  button[class*="bg-primary"],
+  .text-white,
+  [class*="text-white"] {
+    color: white !important;
+  }
+  
+  /* Override Tailwind text color classes */
+  .text-black,
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-dark-gray {
+    color: rgb(29, 61, 60) !important;
   }
   
   /* Responsive typography - Source Sans Pro */
@@ -76,12 +100,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #474545;
+  background: rgba(29, 61, 60, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #1c1b1b;
+  background: rgba(29, 61, 60, 0.3);
 }
 
 /* Syntax highlighting overrides */

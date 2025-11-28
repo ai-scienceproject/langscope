@@ -112,16 +112,16 @@ export default function ArenaIndexPage() {
     <Layout>
       <div className="min-h-screen bg-gray-50">
         {/* Header Section */}
-        <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 rounded-full mb-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 mb-6">
                 <Image src="/logos/battle.png" alt="Battle Arena" width={80} height={80} className="w-20 h-20" />
               </div>
-              <h1 className="text-5xl font-bold mb-4">
+              <h1 className="text-5xl font-bold mb-4" style={{ color: 'rgb(29, 61, 60)' }}>
                 Battle Arena
               </h1>
-              <p className="text-xl text-primary-100 mb-8">
+              <p className="text-xl mb-8" style={{ color: 'rgb(29, 61, 60)' }}>
                 Watch LLMs compete head-to-head! Compare responses and vote for the winner.
                 Your votes help improve the rankings and make evaluations more accurate.
               </p>

@@ -61,18 +61,18 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="w-full" style={{ backgroundColor: 'rgb(187, 196, 196)' }}>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           {/* Logo and tagline */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <Image src="/logos/langscope.png" alt="Langscope" width={32} height={32} className="w-8 h-8" />
-                <span className="text-xl font-bold text-white">Langscope</span>
+                <Image src="/logos/langscope.png" alt="LangScope" width={40} height={40} className="w-10 h-10" />
+                <span className="text-2xl font-bold" style={{ color: 'rgb(29, 61, 60)' }}>LangScope</span>
               </div>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm mb-4" style={{ color: 'rgb(29, 61, 60)' }}>
               Battle-tested LLM rankings with secure data verification.
             </p>
             <div className="flex gap-4">
@@ -82,7 +82,10 @@ const Footer: React.FC = () => {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="transition-colors"
+                  style={{ color: 'rgb(29, 61, 60)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   aria-label={social.name}
                 >
                   {social.icon}
@@ -93,13 +96,16 @@ const Footer: React.FC = () => {
 
           {/* Product links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Product</h3>
+            <h3 className="font-semibold mb-4" style={{ color: 'rgb(29, 61, 60)' }}>Product</h3>
             <ul className="space-y-2">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm transition-colors"
+                    style={{ color: 'rgb(29, 61, 60)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     {link.name}
                   </Link>
@@ -110,13 +116,16 @@ const Footer: React.FC = () => {
 
           {/* Company links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Company</h3>
+            <h3 className="font-semibold mb-4" style={{ color: 'rgb(29, 61, 60)' }}>Company</h3>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm transition-colors"
+                    style={{ color: 'rgb(29, 61, 60)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     {link.name}
                   </Link>
@@ -127,13 +136,16 @@ const Footer: React.FC = () => {
 
           {/* Resources links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Resources</h3>
+            <h3 className="font-semibold mb-4" style={{ color: 'rgb(29, 61, 60)' }}>Resources</h3>
             <ul className="space-y-2">
               {footerLinks.resources.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm transition-colors"
+                    style={{ color: 'rgb(29, 61, 60)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     {link.name}
                   </Link>
@@ -144,13 +156,16 @@ const Footer: React.FC = () => {
 
           {/* Legal links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Legal</h3>
+            <h3 className="font-semibold mb-4" style={{ color: 'rgb(29, 61, 60)' }}>Legal</h3>
             <ul className="space-y-2">
               {footerLinks.legal.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm transition-colors"
+                    style={{ color: 'rgb(29, 61, 60)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     {link.name}
                   </Link>
@@ -161,10 +176,10 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom section */}
-        <div className="border-t border-gray-800 pt-8">
+        <div className="border-t pt-8" style={{ borderColor: 'rgba(29, 61, 60, 0.2)' }}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-400">
-              © {new Date().getFullYear()} Langscope. All rights reserved.
+            <p className="text-sm" style={{ color: 'rgb(29, 61, 60)' }}>
+              © {new Date().getFullYear()} LangScope. All rights reserved.
             </p>
           </div>
         </div>

@@ -1,26 +1,26 @@
-# Langscope - LLM Evaluation Platform
+# LangScope - LLM Evaluation Platform
 
-Battle-tested LLM rankings with blockchain-verified immutability.
+Battle-tested LLM rankings with secure data verification.
 
 ## Features
 
 - 🎯 Domain-specific LLM rankings
-- ⚔️ Interactive arena battle testing
+- ⚔️ Interactive arena battle testing (Manual & LLM Judge modes)
 - 📊 Comprehensive analytics and insights
-- 🔗 Blockchain verification (Arweave, IPFS, Polygon)
-- 🏢 Enterprise dashboard with team management
+- 🔒 Secure data verification and immutable records
+- 👥 Community-driven evaluations
 - 🔍 Full transparency and audit trails
+- 🚀 Server-side rendering for fast initial loads
 
 ## Tech Stack
 
 - **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend:** Node.js, Express, MongoDB
-- **Database:** MongoDB with Mongoose ODM
-- **Real-time:** Socket.io
-- **Blockchain:** Arweave, IPFS, Polygon
-- **Charts:** Recharts
-- **State Management:** Zustand
-- **Data Fetching:** TanStack Query
+- **Backend:** Next.js API Routes (Serverless)
+- **Database:** MongoDB with Mongoose ODM (Azure Cosmos DB for MongoDB in production)
+- **Authentication:** Supabase Auth (Email/Password + OAuth: Google, GitHub)
+- **State Management:** React Context API
+- **Styling:** Tailwind CSS with custom design system
+- **Deployment:** Azure App Service with GitHub Actions CI/CD
 
 ## Getting Started
 
@@ -99,36 +99,56 @@ npm start
 
 This project includes GitHub Actions workflows for continuous integration and deployment:
 
-- **CI Pipeline** (`.github/workflows/ci.yml`): Runs on every push and PR
+- **CI Pipeline** (`.github/workflows/ci.yml`): Runs on `main` and `develop` branch pushes, and on PRs
   - Linting with ESLint
   - Type checking with TypeScript
   - Building the Next.js application
+  - **Must pass before deployment**
 
-- **Deploy Pipeline** (`.github/workflows/deploy.yml`): Runs on main branch pushes
-  - Automated deployment (configure your target)
+- **Deploy Pipeline** (`.github/workflows/deploy-azure.yml`): Runs automatically after CI passes on `main` branch
+  - **Waits for CI pipeline to complete successfully**
+  - Only deploys if CI checks pass (lint, type-check, build)
+  - Builds Next.js application in standalone mode
+  - Creates optimized deployment package
+  - Deploys to Azure App Service automatically
+  - Supports manual trigger via `workflow_dispatch` (use with caution)
 
-See [GITHUB_SETUP.md](./GITHUB_SETUP.md) for detailed setup instructions.
+**Workflow Flow:**
+1. Code pushed to `main` branch
+2. CI pipeline runs (lint → type-check → build)
+3. If CI passes, deployment workflow automatically triggers
+4. Deployment workflow verifies CI status
+5. Code is built and deployed to Azure App Service
 
 ## Deployment
 
-### Vercel (Recommended for Frontend)
+### Azure App Service (Current Production)
+
+The application is deployed to Azure App Service using GitHub Actions.
+
+**Deployment Process:**
+1. Code is pushed to `main` branch
+2. GitHub Actions workflow (`.github/workflows/deploy-azure.yml`) triggers automatically
+3. Application is built in standalone mode for optimized deployment
+4. Deployed to Azure App Service
+
+**Required Environment Variables:**
+- `DATABASE_URL`: MongoDB connection string (Azure Cosmos DB for MongoDB)
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (optional)
+- `OPENROUTER_API_KEY`: OpenRouter API key (for LLM judge evaluations)
+
+See `CODE_DOCUMENTATION.md` for detailed deployment instructions.
+
+### Local Development
 
 ```bash
-vercel deploy
+# Start development server
+npm run dev
 ```
 
-The CI/CD pipeline can automatically deploy to Vercel. Configure `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` in GitHub Secrets.
-
-### Docker
-
-```bash
-docker build -t langscope .
-docker run -p 3000:3000 langscope
-```
-
-### GitHub Actions
-
-The project includes automated deployment workflows. Configure your deployment target in `.github/workflows/deploy.yml`.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## API Documentation
 
@@ -145,6 +165,10 @@ API documentation available at `/api/docs` when running in development mode.
 ## License
 
 MIT License - see LICENSE file for details
+
+## Documentation
+
+For detailed code documentation, see [CODE_DOCUMENTATION.md](./CODE_DOCUMENTATION.md).
 
 ## Contact
 

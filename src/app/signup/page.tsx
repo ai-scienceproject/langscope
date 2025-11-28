@@ -87,12 +87,12 @@ export default function SignupPage() {
         <div className="text-center mb-10 animate-fade-in">
           <Link href="/" className="inline-block mb-4 group">
             <div className="flex items-center justify-center gap-3 group-hover:scale-105 transition-transform duration-300">
-              <Image src="/logos/langscope.png" alt="Langscope" width={56} height={56} className="w-14 h-14" />
-              <span className="text-3xl font-bold text-gray-900">Langscope</span>
+              <Image src="/logos/langscope.png" alt="LangScope" width={72} height={72} className="w-16 h-16 sm:w-20 sm:h-20" />
+              <span className="text-4xl font-bold text-gray-900">LangScope</span>
             </div>
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Create your account</h1>
-          <p className="text-gray-600 text-lg">Get started with Langscope today</p>
+          <p className="text-gray-600 text-lg">Get started with LangScope today</p>
         </div>
 
         {/* Signup Card */}

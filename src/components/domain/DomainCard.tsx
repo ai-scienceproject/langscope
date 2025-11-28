@@ -24,32 +24,34 @@ const DomainCard: React.FC<DomainCardProps> = ({
       className={cn(
         'group relative bg-white rounded-lg sm:rounded-xl border border-gray-200 p-4 sm:p-5',
         'transition-all duration-300 hover:shadow-lg hover:border-dark-gray',
+        'h-full flex flex-col', // Ensure all cards have same height
         featured && 'ring-1 ring-dark-gray',
         className
       )}
     >
       {featured && (
-        <div className="absolute -top-2 -right-2 bg-black text-white px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-semibold shadow-md flex items-center gap-1">
+        <div className="absolute -top-2 -right-2 bg-[#E8E3FF] text-[rgb(29,61,60)] px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-semibold shadow-md shadow-purple-200/30 flex items-center gap-1">
           <span>⭐</span>
           <span className="hidden xs:inline">Featured</span>
         </div>
       )}
 
       <div className="flex flex-col h-full">
-        {/* Icon */}
-        <div 
-          className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl flex items-center justify-center text-2xl sm:text-3xl mb-3 sm:mb-4 shadow-md"
-          style={{ backgroundColor: iconBgColor }}
-        >
-          {domain.icon}
+        {/* Icon and Title in line */}
+        <div className="flex items-center gap-3 mb-2 sm:mb-3">
+          <div 
+            className="flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0"
+          >
+            {domain.icon}
+          </div>
+          <h3 className="text-sm sm:text-base font-bold text-black group-hover:text-dark-gray transition-colors">
+            {domain.name}
+          </h3>
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col">
-          <h3 className="text-sm sm:text-base font-bold text-black mb-1 sm:mb-1.5 group-hover:text-dark-gray transition-colors">
-            {domain.name}
-          </h3>
-          <p className="text-xs sm:text-sm text-dark-gray line-clamp-2 leading-relaxed mb-3 sm:mb-4 flex-1">{domain.description}</p>
+        <div className="flex-1 flex flex-col justify-between">
+          <p className="text-xs sm:text-sm text-dark-gray line-clamp-2 leading-relaxed mb-3 sm:mb-4">{domain.description}</p>
           
           {/* Battle and model count */}
           <div className="mb-3 sm:mb-4 text-xs text-dark-gray">
@@ -66,7 +68,7 @@ const DomainCard: React.FC<DomainCardProps> = ({
             onClick={() => {
               window.location.href = `/rankings/${domain.slug}`;
             }}
-            className="w-full rounded-lg font-medium hover:bg-light-gray hover:border-black text-xs sm:text-sm"
+            className="w-full rounded-lg font-medium hover:bg-light-gray hover:border-black text-xs sm:text-sm mt-auto"
             iconPosition="right"
             icon={
               <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

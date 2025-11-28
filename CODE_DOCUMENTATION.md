@@ -1,4 +1,4 @@
-# Langscope - Complete Code Documentation
+# LangScope - Complete Code Documentation
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**Langscope** is a comprehensive LLM (Large Language Model) evaluation platform that allows users to:
+**LangScope** is a comprehensive LLM (Large Language Model) evaluation platform that allows users to:
 - Compare and rank different LLM models across various domains
 - Conduct head-to-head battles between models
 - View detailed analytics and battle history
@@ -580,15 +580,29 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 **Purpose**: Persistent left navigation sidebar.
 
 **Features**:
-- Navigation links (Home, Rankings, Arena, Compare, About)
-- Login/Signup buttons (when not authenticated)
-- User menu (when authenticated)
+- Navigation links (Home, Rankings, Arena, About) with colorful 3D-style icons
+- LangScope logo with image (`/logos/langscope.png`)
+- Login/Signup buttons (when not authenticated, hidden when collapsed)
+- User menu (when authenticated, hidden when collapsed)
+- Auto-collapses when navigating away from home page
 - Collapsible on mobile devices
 - Responsive design with hamburger menu
+- "Current plan" section (Free trial, Upgrade to Pro button)
+- User profile section with avatar and email
+- Logout button
 
 **State Management**:
-- `isCollapsed`: Controls sidebar collapse state
-- `isMobileMenuOpen`: Controls mobile menu visibility
+- `collapsed`: Controls sidebar collapse state (auto-collapses on non-home pages)
+- `mobileMenuOpen`: Controls mobile menu visibility
+- Uses `usePathname` to detect current route and auto-collapse
+
+**Styling**:
+- Light lavender background (`bg-[#F5F3FF]`)
+- Collapsed width: `w-12` (48px)
+- Expanded width: `w-64 sm:w-72`
+- Logo visible when collapsed (centered, smaller size)
+- Navigation icons use Image components for Rankings and Arena
+- Active page highlighted (no background circle, just text color change)
 
 #### Sidebar (`src/components/layout/Sidebar.tsx`)
 
@@ -600,13 +614,16 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 2. **'leaderboard'**: Live leaderboard for arena battles
 3. **'domains'**: Domain showcase sidebar
 
-**Domain Showcase Sidebar**:
-- Displays list of domains
+**Trending Domains Sidebar** (formerly "Domain Showcase"):
+- Displays list of domains sorted by battle count
 - Shows domain icons (emojis)
 - Displays battle count and model count
+- Format: "#Domain Name" with "#" prefix (homepage only)
 - Format: "1,247 battles — 23 models ranked"
 - Clicking a domain navigates to rankings page
 - Hover animations (shadow and scale effects)
+- Auto-collapses on mobile, expandable on desktop
+- Dynamically calculates visible domains based on viewport height
 
 #### Header (`src/components/layout/Header.tsx`)
 
@@ -620,6 +637,15 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 **Purpose**: Site footer with links and information.
 
+**Features**:
+- LangScope logo and tagline
+- Four navigation columns: Product, Company, Resources, Legal
+- Social media links (Twitter, GitHub, Discord)
+- Copyright notice
+- Background color matches "LLM" highlight color from homepage (`rgb(187, 196, 196)`)
+- Text color: `rgb(29, 61, 60)` for readability
+- Stretches to extreme left edge of viewport
+
 ### Page Components
 
 #### HomePage (`src/components/pages/HomePage.tsx`)
@@ -630,23 +656,31 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Hero section with large search bar
 - Features section (4 feature cards)
 - "How It Works" section (3 steps)
-- Domain showcase in right sidebar
+- Trending Domains sidebar (right side)
+- Mobile domain showcase (top domains on mobile)
 
 **Data Flow**:
-1. `useEffect` fetches domains on mount
-2. Calls `/api/domains` endpoint
-3. Transforms MongoDB data to Domain type
-4. Sorts domains by battle count (descending)
-5. Passes domains to Layout for sidebar display
+1. **Server-Side Rendering**: Domains are fetched on the server in `src/app/page.tsx` for fast initial load
+2. Domains are passed as `initialDomains` prop to HomePage component
+3. If initial domains are not provided, falls back to client-side fetch via `/api/domains` endpoint
+4. Transforms MongoDB data to Domain type
+5. Sorts domains by battle count (descending)
+6. Adds "#" prefix to domain names for homepage display only
+7. Passes domains to Layout for sidebar display as "Trending Domains"
 
 **State**:
-- `domains`: Array of domain objects
+- `domains`: Array of domain objects (initialized from server-side data)
 - `searchQuery`: Current search input value
 
 **Search Functionality**:
 - Search bar updates `searchQuery` state
 - `handleSearch` function processes search (currently placeholder)
-- Domain showcase is not affected by search (always shows all domains)
+- Trending Domains sidebar is not affected by search (always shows all domains)
+
+**Performance Optimization**:
+- Server-side data fetching eliminates client-side API delay
+- Domains are available immediately when page renders
+- Trending Domains sidebar appears instantly without loading delay
 
 #### RankingsPage (`src/components/pages/RankingsPage.tsx`)
 
@@ -849,6 +883,26 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Size variants
 - Rounded styling
 
+#### DomainCard (`src/components/domain/DomainCard.tsx`)
+
+**Purpose**: Displays domain information in card format.
+
+**Features**:
+- Icon and domain name in same line (horizontal layout)
+- Domain description with line clamping
+- Battle and model count statistics
+- "Explore Rankings" button with arrow icon
+- Consistent card heights in grid layout
+- Hover effects (shadow, border color change)
+- Featured badge (optional)
+
+**Layout**:
+- Icon and title aligned horizontally with gap
+- Description below with proper spacing
+- Stats and button at bottom
+- Uses flexbox for consistent heights (`h-full flex flex-col`)
+- Button positioned at bottom with `mt-auto`
+
 #### RankingsTable (`src/components/rankings/RankingsTable.tsx`)
 
 **Purpose**: Displays rankings in table format.
@@ -896,16 +950,18 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 **Functions**:
 
-1. **`getDomains()`**: Fetch all domains
-2. **`getDomainBySlug(slug)`**: Fetch domain by slug
-3. **`getDomainsWithStats()`**: Fetch domains with aggregated statistics
+1. **`getDomains()`**: Fetch all active domains with statistics
+   - Fetches domains where `isActive: true`
+   - For each domain, calculates:
+     - `modelCount`: Count of unique models with rankings in this domain
+     - `battleCount`: Total number of battles in this domain
+   - Returns domains sorted by creation date (newest first)
 
-**`getDomainsWithStats()` Implementation**:
-- Fetches all domains
-- For each domain, aggregates:
-  - `modelCount`: Count of unique models with rankings
-  - `battleCount`: Sum of total battles from all rankings
-- Returns domains with statistics
+2. **`getDomainBySlug(slug)`**: Fetch domain by slug
+   - Returns single domain matching slug
+   - Only returns active domains
+
+3. **`getDomainsWithStats()`**: Fetch domains with aggregated statistics (legacy, use `getDomains()` instead)
 
 ### Model Service (`src/lib/db/services/modelService.ts`)
 
@@ -1276,13 +1332,26 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 ### Azure App Service Deployment
 
-The application is configured for deployment to Azure App Service using GitHub Actions.
+The application is configured for deployment to Azure App Service using GitHub Actions with CI/CD pipeline integration.
+
+**CI Pipeline** (`.github/workflows/ci.yml`):
+- Runs on pushes to `main` and `develop` branches
+- Runs on pull requests to `main` and `develop` branches
+- Executes three jobs in sequence:
+  1. **Lint**: ESLint code quality checks
+  2. **Type Check**: TypeScript type validation
+  3. **Build**: Next.js application build
+- **Must complete successfully before deployment**
 
 **Deployment Workflow** (`.github/workflows/deploy-azure.yml`):
-- Triggers on pushes to `main` branch
-- Builds Next.js application in standalone mode
-- Creates optimized deployment package
-- Deploys to Azure App Service using publish profile
+- **Triggers**: Automatically triggered after CI pipeline completes successfully on `main` branch
+- **Manual Trigger**: Supports `workflow_dispatch` for manual deployments (use with caution)
+- **CI Verification**: Includes `check-ci-status` job that verifies CI completed successfully
+- **Build Process**:
+  - Builds Next.js application in standalone mode
+  - Creates optimized deployment package
+  - Deploys to Azure App Service using publish profile
+- **Code Checkout**: Properly checks out code from the triggering CI workflow commit
 
 **Key Features**:
 - **Standalone Build**: Uses Next.js `output: 'standalone'` for minimal deployment size
@@ -1306,15 +1375,26 @@ The application is configured for deployment to Azure App Service using GitHub A
 
 **Deployment Process**:
 1. Code is pushed to `main` branch
-2. GitHub Actions workflow triggers
-3. Application is built in standalone mode
-4. Deployment package is created with:
+2. **CI Pipeline runs first** (`.github/workflows/ci.yml`):
+   - Linting with ESLint
+   - Type checking with TypeScript
+   - Building the Next.js application
+3. **If CI passes**, deployment workflow (`.github/workflows/deploy-azure.yml`) automatically triggers
+4. Deployment workflow verifies CI status
+5. Application is built in standalone mode
+6. Deployment package is created with:
    - `.next/standalone/*` (bundled server and dependencies)
    - `.next/static/*` (static assets)
    - `public/*` (public assets)
    - `package.json` (minimal, runs `node server.js`)
-5. Package is deployed to Azure App Service
-6. Azure starts the application using `node server.js`
+7. Package is deployed to Azure App Service
+8. Azure starts the application using `node server.js`
+
+**CI/CD Safety**:
+- Deployment only occurs if CI pipeline passes all checks
+- Prevents deployment of broken code
+- Ensures code quality before production deployment
+- Manual deployment via `workflow_dispatch` is available but shows a warning
 
 **Database Connection**:
 - Azure Cosmos DB connection strings are automatically fixed to include `/langscope` database name
@@ -1376,6 +1456,20 @@ The application is configured for deployment to Azure App Service using GitHub A
 ---
 
 ## Recent Updates
+
+### Performance Optimizations
+- ✅ **Server-Side Domain Fetching**: Homepage now fetches domains on the server for instant loading
+- ✅ **Trending Domains**: Renamed "Domain Showcase" to "Trending Domains" with "#" prefix on homepage
+- ✅ **Optimized Card Heights**: All domain cards now have consistent heights in grid layout
+- ✅ **Scrollbar Styling**: Custom scrollbar colors to match theme (no black lines)
+
+### UI/UX Improvements
+- ✅ **Left Sidebar**: Auto-collapses when navigating away from home, hidden user section when collapsed
+- ✅ **Domain Cards**: Icon and name in same line, removed unnecessary spacing, consistent card heights
+- ✅ **Logo Updates**: Using image files (`langscope.png`, `ranking.png`, `battle.png`) instead of SVG components
+- ✅ **Footer Styling**: Background matches homepage highlight color, stretches to extreme left
+- ✅ **Button Styling**: Changed from black to light purple (`#E8E3FF`) with dark gray text
+- ✅ **About Page**: Removed Technology section
 
 ### LLM Judge Evaluation
 - ✅ Automatic battle evaluation using another LLM as judge

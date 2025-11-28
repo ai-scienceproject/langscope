@@ -7,14 +7,21 @@ import Button from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Domain } from '@/types';
 
-const HomePage: React.FC = () => {
+interface HomePageProps {
+  initialDomains?: Domain[];
+}
+
+const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
   const { user, isAuthenticated } = useAuth();
-  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domains, setDomains] = useState<Domain[]>(initialDomains);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchDomains();
-  }, []);
+    // Only fetch if we don't have initial domains (fallback for client-side navigation)
+    if (initialDomains.length === 0) {
+      fetchDomains();
+    }
+  }, [initialDomains.length]);
 
   const fetchDomains = async () => {
     try {
@@ -65,9 +72,10 @@ const HomePage: React.FC = () => {
   };
 
   // Prepare domains for sidebar with icons - always show all domains, not filtered
+  // Add "#" prefix to domain names for homepage display only
   const domainsForSidebar = domains.map(domain => ({
     id: domain.id,
-    name: domain.name,
+    name: `#${domain.name}`,
     slug: domain.slug,
     icon: domain.icon,
     battleCount: domain.battleCount,
@@ -91,8 +99,8 @@ const HomePage: React.FC = () => {
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10 px-3 sm:px-4 md:px-6">
-          <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-black mb-4 sm:mb-5 leading-tight text-3d">
-            Find the Perfect <span className="font-extrabold" style={{ color: '#A95C68', textShadow: '3px 3px 0px rgba(169,92,104,0.2), 6px 6px 0px rgba(169,92,104,0.15), 9px 9px 0px rgba(169,92,104,0.1)' }}>LLM</span> for Your Use Case
+          <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-gray-800 mb-4 sm:mb-5 leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+            Find the Perfect <span className="px-0.5 rounded-[8px] font-light inline-block mr-1" style={{ backgroundColor: 'rgb(187, 196, 196)', color: 'rgb(29, 61, 60)' }}>LLM</span> for Your <span className="px-0.5 rounded-[8px] font-light inline-block ml-1" style={{ backgroundColor: 'rgb(235, 232, 254)', color: 'rgb(29, 61, 60)' }}>Use Case</span>
           </h1>
 
           {/* Large Search Bar */}
@@ -110,9 +118,9 @@ const HomePage: React.FC = () => {
             <div className="mt-3 sm:mt-4 flex justify-center">
               <Button
                 onClick={() => handleSearch(searchQuery)}
-                variant="primary"
+                variant="outline"
                 size="lg"
-                className="w-full sm:w-auto px-6 sm:px-8"
+                className="w-auto px-6 sm:px-8 bg-white border-2 border-gray-300 text-gray-900 font-semibold hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200"
               >
                 Search
               </Button>
@@ -124,6 +132,52 @@ const HomePage: React.FC = () => {
             Example: Medical diagnosis assistant in Hindi — Legal contract analysis — Customer support chatbot
           </p>
         </div>
+      </section>
+
+      {/* Mobile Domain Showcase - Show below hero search on mobile only */}
+      <section className="lg:hidden bg-white rounded-2xl border border-gray-200 p-4 mb-4 mx-3 sm:mx-4">
+        <h3 className="text-lg font-bold text-black mb-3">Top Domains</h3>
+        <div className="space-y-2">
+          {domains.slice(0, 5).map((domain) => (
+            <div
+              key={domain.id}
+              className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-white to-light-gray/30 border border-gray-100 hover:border-dark-gray/20 hover:shadow-md transition-all duration-300 cursor-pointer group"
+              onClick={() => {
+                window.location.href = `/rankings/${domain.slug}`;
+              }}
+            >
+              <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300">
+                <span aria-hidden="true">
+                  {domain.icon || '📄'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-bold text-black truncate group-hover:text-dark-gray transition-colors">
+                  #{domain.name}
+                </p>
+                <p className="text-xs text-dark-gray mt-0.5">
+                  {domain.battleCount?.toLocaleString() || 0} battles — {domain.modelCount || 0} models ranked
+                </p>
+              </div>
+              <svg 
+                className="w-5 h-5 text-dark-gray/40 group-hover:text-dark-gray group-hover:translate-x-0.5 transition-all duration-300 flex-shrink-0" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => {
+            window.location.href = '/rankings';
+          }}
+          className="w-full mt-4 px-4 py-2.5 text-sm font-semibold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] rounded-lg transition-all duration-300 shadow-lg shadow-purple-200/30"
+        >
+          View All Domains →
+        </button>
       </section>
 
       {/* Features Section */}
@@ -173,9 +227,9 @@ const HomePage: React.FC = () => {
 
 
       {/* How It Works Section */}
-      <section className="py-8 sm:py-10 md:py-12 mt-8 sm:mt-10 md:mt-12">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-black text-center mb-6 sm:mb-8">How It Works</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+      <section className="py-4 sm:py-6 md:py-8 mt-2 sm:mt-3 md:mt-4">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-black text-center mb-4 sm:mb-6">How It Works</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {[
             {
               step: '1',
@@ -198,15 +252,15 @@ const HomePage: React.FC = () => {
           ].map((item) => (
             <div
               key={item.step}
-              className="text-center p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border-2 border-gray-200 shadow-lg hover:shadow-xl hover:border-dark-gray hover:scale-[1.02] transition-all duration-300 group relative overflow-hidden"
+              className="text-center p-3 sm:p-4 bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200 shadow-lg hover:shadow-xl hover:border-dark-gray hover:scale-[1.02] transition-all duration-300 group relative overflow-hidden"
             >
               <div className="relative z-10">
-                <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">{item.icon}</div>
-                <div className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-black text-white rounded-full text-xs font-bold mb-3 sm:mb-4 shadow-lg">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-3 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">{item.icon}</div>
+                <div className="inline-block px-2 sm:px-3 py-0.5 sm:py-1 bg-[#E8E3FF] text-[rgb(29,61,60)] rounded-full text-xs font-bold mb-2 sm:mb-3 shadow-lg shadow-purple-200/30">
                   Step {item.step}
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-black mb-2">{item.title}</h3>
-                <p className="text-xs sm:text-sm text-dark-gray leading-relaxed">{item.description}</p>
+                <h3 className="text-sm sm:text-base font-bold text-black mb-1.5">{item.title}</h3>
+                <p className="text-xs text-dark-gray leading-relaxed">{item.description}</p>
               </div>
             </div>
           ))}

@@ -194,6 +194,7 @@ const RankingsTable: React.FC<RankingsTableProps> = ({
                         size="md"
                         shape="square"
                         fallback={ranking.model.provider.charAt(0)}
+                        className="bg-transparent"
                       />
                       <div className="flex-1 min-w-0">
                         <button

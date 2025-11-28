@@ -44,11 +44,12 @@ const Avatar: React.FC<AvatarProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center justify-center bg-primary-600 text-white font-semibold overflow-hidden',
+        'flex items-center justify-center font-semibold overflow-hidden bg-transparent',
         sizes[size],
         shapes[shape],
         className
       )}
+      style={{ color: 'rgb(29, 61, 60)' }}
     >
       {showFallback ? (
         <span>{getFallbackText()}</span>

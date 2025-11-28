@@ -110,14 +110,14 @@ export default function RankingsIndexPage() {
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                 {filteredDomains.map((domain) => (
                   <div
                     key={domain.id}
                     onClick={() => handleDomainClick(domain.slug)}
-                    className="cursor-pointer transform transition-transform hover:scale-105"
+                    className="cursor-pointer transform transition-transform hover:scale-105 h-full flex"
                   >
-                    <DomainCard domain={domain} />
+                    <DomainCard domain={domain} className="w-full" />
                   </div>
                 ))}
               </div>

@@ -377,7 +377,7 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
     if (navigator.share) {
       navigator.share({
         title: 'My LLM Evaluation Results',
-        text: 'Check out my evaluation results on Langscope',
+        text: 'Check out my evaluation results on LangScope',
         url: url,
       });
     } else {

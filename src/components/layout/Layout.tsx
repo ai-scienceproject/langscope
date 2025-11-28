@@ -33,30 +33,33 @@ const Layout: React.FC<LayoutProps> = ({
   className,
 }) => {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-light-gray">
-      {/* Left Sidebar */}
-      <LeftSidebar user={user} isAuthenticated={isAuthenticated} />
-      
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 w-full lg:w-auto lg:ml-0">
-        <main className={cn('flex-1 flex flex-col lg:flex-row', className)}>
-          <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
-            {children}
-          </div>
-          
-          {showSidebar && (
-            <Sidebar
-              type={sidebarType}
-              filters={filters}
-              onFilterChange={onFilterChange}
-              standings={standings}
-              domains={domains}
-            />
-          )}
-        </main>
+    <div className="min-h-screen flex flex-col bg-light-gray">
+      <div className="flex flex-1 lg:flex-row">
+        {/* Left Sidebar */}
+        <LeftSidebar user={user} isAuthenticated={isAuthenticated} />
         
-        <Footer />
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 w-full lg:w-auto lg:ml-0">
+          <main className={cn('flex-1 flex flex-col lg:flex-row', className)}>
+            <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
+              {children}
+            </div>
+            
+            {showSidebar && (
+              <Sidebar
+                type={sidebarType}
+                filters={filters}
+                onFilterChange={onFilterChange}
+                standings={standings}
+                domains={domains}
+              />
+            )}
+          </main>
+        </div>
       </div>
+      
+      {/* Footer - positioned outside flex container, stretches from extreme left */}
+      <Footer />
     </div>
   );
 };

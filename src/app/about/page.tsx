@@ -8,10 +8,10 @@ export default function AboutPage() {
     <Layout>
       <div className="min-h-screen bg-gray-50">
         {/* Hero Section */}
-        <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
+        <div className="bg-white border-b border-gray-200">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-            <h1 className="text-5xl font-bold mb-4">About Langscope</h1>
-            <p className="text-xl text-primary-100">
+            <h1 className="text-5xl font-bold mb-4" style={{ color: 'rgb(29, 61, 60)' }}>About LangScope</h1>
+            <p className="text-xl" style={{ color: 'rgb(29, 61, 60)' }}>
               Battle-tested LLM rankings with data integrity verification
             </p>
           </div>
@@ -23,7 +23,7 @@ export default function AboutPage() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Langscope is a transparent, community-driven platform for evaluating Large Language Models (LLMs) 
+              LangScope is a transparent, community-driven platform for evaluating Large Language Models (LLMs) 
               across multiple domains. We believe that AI evaluation should be fair, verifiable, and accessible to everyone.
             </p>
             <p className="text-gray-700 leading-relaxed">
@@ -124,32 +124,6 @@ export default function AboutPage() {
                 <p className="text-gray-700 text-sm">
                   Custom evaluations, private test suites, and team management features.
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Technology Stack */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Technology</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Langscope is built with modern web technologies and decentralized infrastructure:
-            </p>
-            <div className="space-y-2 text-gray-700">
-              <div className="flex items-center gap-2">
-                <span className="text-primary-600">●</span>
-                <span><strong>Frontend:</strong> React, Next.js, TypeScript, Tailwind CSS</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary-600">●</span>
-                <span><strong>Backend:</strong> Next.js API Routes, MongoDB, Mongoose</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary-600">●</span>
-                <span><strong>Database:</strong> MongoDB with Mongoose ODM, secure data hashing</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary-600">●</span>
-                <span><strong>Authentication:</strong> JWT-based secure authentication</span>
               </div>
             </div>
           </div>

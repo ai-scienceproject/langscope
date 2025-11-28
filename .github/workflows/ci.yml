@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ develop ]  # Exclude main - deployment is handled by deploy-azure.yml workflow
+    branches: [ main, develop ]  # Run CI on both main and develop
   pull_request:
     branches: [ main, develop ]
 

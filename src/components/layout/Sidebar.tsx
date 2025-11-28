@@ -22,12 +22,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   className,
 }) => {
   // Start collapsed on mobile, expanded on desktop
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 1024; // lg breakpoint
+  // Default to true (collapsed) to avoid hydration mismatch, then update after mount
+  const [collapsed, setCollapsed] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Update collapsed state after hydration to match screen size
+  React.useEffect(() => {
+    setMounted(true);
+    // For domains sidebar, always start collapsed on mobile, expanded on desktop
+    if (type === 'domains') {
+      setCollapsed(window.innerWidth < 1024); // lg breakpoint
+    } else {
+      setCollapsed(window.innerWidth < 1024);
     }
-    return false;
-  });
+  }, [type]);
 
   if (type === 'filter' && filters && onFilterChange) {
     return (
@@ -57,6 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <DomainsSidebar
         domains={domains}
         collapsed={collapsed}
+        mounted={mounted}
         onToggleCollapse={() => setCollapsed(!collapsed)}
         className={className}
       />
@@ -332,9 +341,32 @@ const LeaderboardSidebar: React.FC<{
 const DomainsSidebar: React.FC<{
   domains: Array<{ id: string; name: string; slug: string; icon?: string; battleCount?: number; modelCount?: number }>;
   collapsed: boolean;
+  mounted: boolean;
   onToggleCollapse: () => void;
   className?: string;
-}> = ({ domains, collapsed, onToggleCollapse, className }) => {
+}> = ({ domains, collapsed, mounted, onToggleCollapse, className }) => {
+  const [visibleDomains, setVisibleDomains] = React.useState(10);
+  
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const updateVisibleDomains = () => {
+        // Calculate how many domains can fit based on viewport height
+        // Each domain item is approximately 80px tall, plus header and button space
+        const headerHeight = 100; // Header + title
+        const buttonHeight = 60; // "View All Domains" button
+        const padding = 40; // Top and bottom padding
+        const availableHeight = window.innerHeight - headerHeight - buttonHeight - padding;
+        const itemHeight = 80; // Approximate height per domain item
+        const maxVisible = Math.max(3, Math.floor(availableHeight / itemHeight));
+        setVisibleDomains(maxVisible);
+      };
+      
+      updateVisibleDomains();
+      window.addEventListener('resize', updateVisibleDomains);
+      return () => window.removeEventListener('resize', updateVisibleDomains);
+    }
+  }, []);
+  
   const formatNumber = (num: number = 0) => {
     // Format with commas for thousands
     return num.toLocaleString('en-US');
@@ -369,26 +401,28 @@ const DomainsSidebar: React.FC<{
   return (
     <aside
       className={cn(
-        'bg-white border-l border-gray-200 transition-all duration-300',
-        // On mobile: full width when expanded, hidden when collapsed
+        'transition-all duration-300',
+        'bg-light-gray', // Match main content background
+        // On mobile: hide completely since we show top domains in homepage
         // On desktop: fixed width when expanded, hidden when collapsed
-        collapsed 
+        // Use mounted check to prevent hydration mismatch
+        !mounted || collapsed 
           ? 'w-0 lg:w-0 overflow-hidden' 
-          : 'w-full lg:w-80',
+          : 'hidden lg:block lg:w-80',
         // On mobile: position relative for better layout, on desktop: sticky
         'lg:sticky lg:top-0 lg:h-fit',
         className
       )}
     >
-      {!collapsed && (
+      {mounted && !collapsed && (
         <div className="px-4 sm:px-6 pt-4 pb-4 sm:pb-6">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <h3 className="text-base sm:text-lg font-bold text-black">Domain Showcase</h3>
+            <h3 className="text-base sm:text-lg font-bold text-black">Trending Domains</h3>
             {/* Mobile close button */}
             <button
               onClick={onToggleCollapse}
               className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Close Domain Showcase"
+              aria-label="Close Trending Domains"
             >
               <svg
                 className="w-5 h-5 text-gray-600"
@@ -401,7 +435,7 @@ const DomainsSidebar: React.FC<{
             </button>
           </div>
           <div className="space-y-1 sm:space-y-1.5">
-            {domains.slice(0, 10).map((domain) => (
+            {domains.slice(0, visibleDomains).map((domain) => (
               <div
                 key={domain.id}
                 className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-gradient-to-r from-white to-light-gray/30 border border-gray-100 hover:border-dark-gray/20 hover:shadow-md hover:shadow-dark-gray/10 transition-all duration-300 cursor-pointer group hover:scale-[1.02] hover:bg-gradient-to-r hover:from-light-gray/50 hover:to-light-gray"
@@ -410,7 +444,7 @@ const DomainsSidebar: React.FC<{
                 }}
               >
                 <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-dark-gray/10 to-dark-gray/5 flex items-center justify-center text-base sm:text-lg group-hover:scale-110 transition-transform duration-300">
+                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-2xl sm:text-3xl group-hover:scale-110 transition-transform duration-300">
                     <span aria-hidden="true">
                       {getDomainIcon(domain)}
                     </span>
@@ -441,7 +475,7 @@ const DomainsSidebar: React.FC<{
             onClick={() => {
               window.location.href = '/rankings';
             }}
-            className="w-full mt-4 sm:mt-6 px-4 py-2.5 text-sm font-semibold text-white bg-black hover:bg-dark-gray rounded-lg transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+            className="w-full mt-4 sm:mt-6 px-4 py-2.5 text-sm font-semibold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] rounded-lg transition-all duration-300 hover:shadow-md hover:shadow-purple-300/40 hover:scale-[1.02]"
           >
             View All Domains →
           </button>
@@ -449,11 +483,11 @@ const DomainsSidebar: React.FC<{
       )}
 
       {/* Toggle button - only visible on desktop when collapsed */}
-      {collapsed && (
+      {mounted && collapsed && (
         <button
           onClick={onToggleCollapse}
           className="hidden lg:flex absolute top-4 -left-4 w-8 h-8 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:bg-gray-50 z-10"
-          aria-label="Expand Domain Showcase"
+              aria-label="Expand Trending Domains"
         >
           <svg
             className="w-4 h-4 text-gray-600 transition-transform rotate-180"
@@ -466,23 +500,6 @@ const DomainsSidebar: React.FC<{
         </button>
       )}
       
-      {/* Mobile expand button - show when collapsed on mobile */}
-      {collapsed && (
-        <button
-          onClick={onToggleCollapse}
-          className="lg:hidden fixed bottom-4 right-4 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-dark-gray transition-all z-50"
-          aria-label="Show Domain Showcase"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      )}
     </aside>
   );
 };
