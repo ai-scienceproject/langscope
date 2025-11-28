@@ -1,12 +1,13 @@
 import { getDomains } from '@/lib/db/services/domainService';
-import HomePage from '@/components/pages/HomePage'
+import HomePage from '@/components/pages/HomePage';
+import type { Domain } from '@/types';
 
 export default async function Page() {
   // Fetch domains on the server for faster initial load
-  let domains = [];
+  let domains: Domain[] = [];
   try {
     const domainsData = await getDomains();
-    domains = domainsData.map((domain: any) => ({
+    domains = domainsData.map((domain: any): Domain => ({
       id: domain._id?.toString() || domain.id,
       name: domain.name,
       slug: domain.slug,

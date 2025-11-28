@@ -15,9 +15,6 @@ const DomainCard: React.FC<DomainCardProps> = ({
   featured = false,
   className,
 }) => {
-  // Get icon background color based on domain color or use default
-  const iconBgColor = domain.color || '#475569'; // Default to slate-600
-  
   // Card is not clickable - only the button navigates
   return (
     <div
