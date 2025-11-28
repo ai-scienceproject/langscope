@@ -364,30 +364,239 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
     fetchResults();
   }, [evaluationId, domainSlug]);
 
-  const handleExportPDF = () => {
-    alert('Downloading Report PDF...');
-  };
+  const handleExportPDF = async () => {
+    if (!results) return;
 
-  const handleExportBattleData = () => {
-    alert('Exporting Battle Data...');
-  };
+    try {
+      // Dynamically import jsPDF to avoid SSR issues
+      const { default: jsPDF } = await import('jspdf');
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
+      const margin = 20;
+      const lineHeight = 7;
+      const sectionSpacing = 10;
 
-  const handleShareResults = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({
-        title: 'My LLM Evaluation Results',
-        text: 'Check out my evaluation results on LangScope',
-        url: url,
-      });
-    } else {
-      navigator.clipboard.writeText(url);
-      alert('Results link copied to clipboard!');
+      // Helper function to add a new page if needed
+      const checkPageBreak = (requiredSpace: number) => {
+        if (yPos + requiredSpace > pageHeight - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+      };
+
+      // Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Evaluation Results Report', margin, yPos);
+      yPos += lineHeight * 2;
+
+      // Domain and Summary Info
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Domain: ${results.domainName}`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Total Battles: ${results.totalBattles}`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Models Tested: ${results.modelsTested}`, margin, yPos);
+      yPos += lineHeight * 2;
+
+      // Performance Summary
+      checkPageBreak(30);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Performance Summary', margin, yPos);
+      yPos += lineHeight * 1.5;
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Predicted Rank: #${results.predictedRank} (${results.predictedScore} pts)`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Actual Rank: #${results.userRank} (${results.actualScore} pts)`, margin, yPos);
+      yPos += lineHeight;
+      const rankDiff = results.predictedRank - results.userRank;
+      if (rankDiff !== 0) {
+        doc.text(`Rank Difference: ${rankDiff > 0 ? '↑' : '↓'} ${Math.abs(rankDiff)}`, margin, yPos);
+        yPos += lineHeight;
+      }
+      doc.text(`Score Difference: +${results.actualScore - results.predictedScore} points`, margin, yPos);
+      yPos += lineHeight * 2;
+
+      // Judge Model Info (if available)
+      if (results.judgeModel) {
+        checkPageBreak(15);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Judge Model', margin, yPos);
+        yPos += lineHeight;
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${results.judgeModel.name} (${results.judgeModel.provider})`, margin, yPos);
+        yPos += lineHeight * 2;
+      }
+
+      // Current Battle Standings
+      if (results.currentBattleRankings && results.currentBattleRankings.length > 0) {
+        checkPageBreak(40);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Current Battle Standings', margin, yPos);
+        yPos += lineHeight * 1.5;
+
+        // Table header
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        const colWidths = [15, 60, 25, 25, 30];
+        const headers = ['Rank', 'Model', 'Score', 'Battles', 'Win Rate'];
+        let xPos = margin;
+        headers.forEach((header, idx) => {
+          doc.text(header, xPos, yPos);
+          xPos += colWidths[idx];
+        });
+        yPos += lineHeight;
+
+        // Table rows
+        doc.setFont('helvetica', 'normal');
+        results.currentBattleRankings.forEach((ranking) => {
+          checkPageBreak(10);
+          xPos = margin;
+          doc.text(`#${ranking.rank}`, xPos, yPos);
+          xPos += colWidths[0];
+          doc.text(ranking.model.name.substring(0, 25), xPos, yPos);
+          xPos += colWidths[1];
+          doc.text(ranking.score.toString(), xPos, yPos);
+          xPos += colWidths[2];
+          doc.text((ranking.battleCount || 0).toString(), xPos, yPos);
+          xPos += colWidths[3];
+          doc.text(`${ranking.winRate.toFixed(1)}%`, xPos, yPos);
+          yPos += lineHeight;
+        });
+        yPos += lineHeight;
+      }
+
+      // Overall Rankings
+      if (results.rankings && results.rankings.length > 0) {
+        checkPageBreak(50);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Overall Rankings', margin, yPos);
+        yPos += lineHeight * 1.5;
+
+        // Table header
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        const colWidths2 = [15, 50, 20, 20, 20, 25];
+        const headers2 = ['Rank', 'Model', 'Predicted', 'Actual', 'Score', 'Win Rate'];
+        let xPos2 = margin;
+        headers2.forEach((header, idx) => {
+          doc.text(header, xPos2, yPos);
+          xPos2 += colWidths2[idx];
+        });
+        yPos += lineHeight;
+
+        // Table rows (show top 20 to avoid too many pages)
+        doc.setFont('helvetica', 'normal');
+        const rankingsToShow = results.rankings.slice(0, 20);
+        rankingsToShow.forEach((ranking) => {
+          checkPageBreak(10);
+          const isUserModel = ranking.rank === results.userRank;
+          const predictedRankForModel = ranking.rank === results.userRank ? results.predictedRank : ranking.rank;
+          
+          if (isUserModel) {
+            doc.setFont('helvetica', 'bold');
+          }
+          
+          xPos2 = margin;
+          doc.text(`#${ranking.rank}`, xPos2, yPos);
+          xPos2 += colWidths2[0];
+          doc.text(ranking.model.name.substring(0, 20), xPos2, yPos);
+          xPos2 += colWidths2[1];
+          doc.text(`#${predictedRankForModel}`, xPos2, yPos);
+          xPos2 += colWidths2[2];
+          doc.text(`#${ranking.rank}`, xPos2, yPos);
+          xPos2 += colWidths2[3];
+          doc.text(ranking.score.toString(), xPos2, yPos);
+          xPos2 += colWidths2[4];
+          doc.text(`${ranking.winRate.toFixed(1)}%`, xPos2, yPos);
+          
+          if (isUserModel) {
+            doc.setFont('helvetica', 'normal');
+          }
+          
+          yPos += lineHeight;
+        });
+        
+        if (results.rankings.length > 20) {
+          yPos += lineHeight;
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'italic');
+          doc.text(`... and ${results.rankings.length - 20} more models`, margin, yPos);
+          yPos += lineHeight;
+        }
+        yPos += lineHeight;
+      }
+
+      // Confidence Progression
+      checkPageBreak(20);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Confidence Progression', margin, yPos);
+      yPos += lineHeight * 1.5;
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Before Testing: ${results.confidenceBefore}%`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`After Testing: ${results.confidenceAfter}%`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Improvement: +${results.confidenceAfter - results.confidenceBefore}%`, margin, yPos);
+      yPos += lineHeight * 2;
+
+      // Key Insights
+      if (insights.length > 0) {
+        checkPageBreak(30);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Key Insights', margin, yPos);
+        yPos += lineHeight * 1.5;
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        insights.forEach((insight) => {
+          checkPageBreak(15);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${insight.icon} ${insight.title}`, margin, yPos);
+          yPos += lineHeight;
+          doc.setFont('helvetica', 'normal');
+          doc.text(insight.description, margin + 5, yPos);
+          yPos += lineHeight * 1.5;
+        });
+      }
+
+      // Footer
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text(
+          `Generated on ${new Date().toLocaleDateString()} - Page ${i} of ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Generate filename
+      const filename = `LangScope_Results_${results.domainName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      // Save the PDF
+      doc.save(filename);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
     }
-  };
-
-  const handleScheduleRetest = () => {
-    alert('Scheduling re-test...');
   };
 
   if (loading || !results) {
@@ -748,24 +957,6 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
                 Download Report PDF
-              </Button>
-              <Button variant="outline" size="md" onClick={handleExportBattleData}>
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export Battle Data
-              </Button>
-              <Button variant="outline" size="md" onClick={handleShareResults}>
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share Results
-              </Button>
-              <Button variant="outline" size="md" onClick={handleScheduleRetest}>
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Schedule Re-test
               </Button>
             </div>
           </div>

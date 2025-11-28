@@ -180,11 +180,13 @@ export default function ArenaIndexPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredDomains.map((domain) => (
-                  <div key={domain.id} className="group">
-                    <DomainCard domain={domain} />
+                  <div key={domain.id} className="group flex flex-col">
+                    <div className="flex-1 min-h-0">
+                      <DomainCard domain={domain} className="!h-auto" />
+                    </div>
                     <Button
                       variant="primary"
-                      className="w-full mt-3"
+                      className="w-full mt-3 flex-shrink-0"
                       onClick={() => handleStartBattle(domain.slug)}
                     >
                       Start Battle ⚔️

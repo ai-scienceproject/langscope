@@ -501,6 +501,8 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
             url.searchParams.set('evaluationId', battleResult.evaluationId);
             window.history.replaceState({}, '', url.toString());
           }
+          // Set flag to indicate battle was completed (for homepage refresh)
+          sessionStorage.setItem('battleCompleted', 'true');
         } else {
           console.error('Failed to save battle:', await battleResponse.text());
         }
@@ -568,6 +570,9 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     console.log('LLM evaluation complete. Redirecting to results...');
     setIsLLMEvaluating(false);
     
+    // Ensure flag is set for homepage refresh (in case it wasn't set in the loop)
+    sessionStorage.setItem('battleCompleted', 'true');
+    
     // Wait a bit for the evaluation to be fully saved and stats to be calculated
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -619,6 +624,8 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
           url.searchParams.set('evaluationId', battleResult.evaluationId);
           window.history.replaceState({}, '', url.toString());
         }
+        // Set flag to indicate battle was completed (for homepage refresh)
+        sessionStorage.setItem('battleCompleted', 'true');
       }
     } catch (error) {
       console.error('Error saving battle:', error);

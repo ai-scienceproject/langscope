@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import SearchBar from '@/components/ui/SearchBar';
 import Button from '@/components/ui/Button';
@@ -13,17 +14,13 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
   const { user, isAuthenticated } = useAuth();
+  const pathname = usePathname();
   const [domains, setDomains] = useState<Domain[]>(initialDomains);
   const [searchQuery, setSearchQuery] = useState('');
+  const isInitialMount = useRef(true);
+  const lastPathnameRef = useRef(pathname);
 
-  useEffect(() => {
-    // Only fetch if we don't have initial domains (fallback for client-side navigation)
-    if (initialDomains.length === 0) {
-      fetchDomains();
-    }
-  }, [initialDomains.length]);
-
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
     try {
       // Fetch domains from API
       const response = await fetch('/api/domains');
@@ -56,9 +53,43 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
       return;
     } catch (error) {
       console.error('Error fetching domains:', error);
-      setDomains([]);
+      // Don't clear domains on error, keep existing data
     }
-  };
+  }, []);
+
+  // Check if battle was completed and refresh domains if needed
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      
+      // Only fetch if we don't have initial domains
+      if (initialDomains.length === 0) {
+        fetchDomains();
+      } else {
+        // Check if a battle was completed (stored in sessionStorage)
+        const battleCompleted = sessionStorage.getItem('battleCompleted');
+        if (battleCompleted === 'true') {
+          // Battle was completed, refresh domains to get updated counts
+          fetchDomains();
+          // Clear the flag
+          sessionStorage.removeItem('battleCompleted');
+        }
+      }
+    }
+  }, [fetchDomains, initialDomains.length]);
+
+  // Refresh domains when navigating to homepage if battle was completed
+  useEffect(() => {
+    // Only refresh if pathname changed to '/' (not on initial mount)
+    if (pathname === '/' && lastPathnameRef.current !== pathname) {
+      const battleCompleted = sessionStorage.getItem('battleCompleted');
+      if (battleCompleted === 'true') {
+        fetchDomains();
+        sessionStorage.removeItem('battleCompleted');
+      }
+    }
+    lastPathnameRef.current = pathname;
+  }, [pathname, fetchDomains]);
 
   const handleSearch = (query: string) => {
     // This is called by the debounced onSearch callback
