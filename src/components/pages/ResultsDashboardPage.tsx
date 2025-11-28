@@ -389,7 +389,10 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
       // Title
       doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
+      // Primary blue color for title
+      doc.setTextColor(37, 99, 235); // primary-600 equivalent
       doc.text('Evaluation Results Report', margin, yPos);
+      doc.setTextColor(0, 0, 0); // Reset to black
       yPos += lineHeight * 2;
 
       // Domain and Summary Info
@@ -406,21 +409,41 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
       checkPageBreak(30);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235); // primary-600
       doc.text('Performance Summary', margin, yPos);
+      doc.setTextColor(0, 0, 0); // Reset to black
       yPos += lineHeight * 1.5;
 
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
       doc.text(`Predicted Rank: #${results.predictedRank} (${results.predictedScore} pts)`, margin, yPos);
       yPos += lineHeight;
+      
+      // Actual Rank in primary color
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(29, 78, 216); // primary-700
       doc.text(`Actual Rank: #${results.userRank} (${results.actualScore} pts)`, margin, yPos);
+      doc.setTextColor(0, 0, 0); // Reset to black
+      doc.setFont('helvetica', 'normal');
       yPos += lineHeight;
+      
       const rankDiff = results.predictedRank - results.userRank;
       if (rankDiff !== 0) {
+        // Green for positive (rank improved), red for negative (rank worsened)
+        if (rankDiff < 0) {
+          doc.setTextColor(22, 163, 74); // green-600
+        } else {
+          doc.setTextColor(239, 68, 68); // red-500
+        }
         doc.text(`Rank Difference: ${rankDiff > 0 ? '↑' : '↓'} ${Math.abs(rankDiff)}`, margin, yPos);
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight;
       }
+      
+      // Score difference in green
+      doc.setTextColor(22, 163, 74); // green-600
       doc.text(`Score Difference: +${results.actualScore - results.predictedScore} points`, margin, yPos);
+      doc.setTextColor(0, 0, 0); // Reset to black
       yPos += lineHeight * 2;
 
       // Judge Model Info (if available)
@@ -428,11 +451,14 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         checkPageBreak(15);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 64, 175); // blue-800
         doc.text('Judge Model', margin, yPos);
         yPos += lineHeight;
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 58, 138); // blue-900
         doc.text(`${results.judgeModel.name} (${results.judgeModel.provider})`, margin, yPos);
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight * 2;
       }
 
@@ -441,19 +467,29 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         checkPageBreak(40);
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(37, 99, 235); // primary-600
         doc.text('Current Battle Standings', margin, yPos);
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight * 1.5;
 
-        // Table header
+        // Table header with background color
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         const colWidths = [15, 60, 25, 25, 30];
         const headers = ['Rank', 'Model', 'Score', 'Battles', 'Win Rate'];
+        const headerHeight = 8;
+        
+        // Draw header background
+        doc.setFillColor(249, 250, 251); // gray-50
+        doc.rect(margin, yPos - headerHeight + 2, pageWidth - (margin * 2), headerHeight, 'F');
+        
+        doc.setTextColor(55, 65, 81); // gray-700
         let xPos = margin;
         headers.forEach((header, idx) => {
           doc.text(header, xPos, yPos);
           xPos += colWidths[idx];
         });
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight;
 
         // Table rows
@@ -480,19 +516,29 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         checkPageBreak(50);
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(37, 99, 235); // primary-600
         doc.text('Overall Rankings', margin, yPos);
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight * 1.5;
 
-        // Table header
+        // Table header with background color
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         const colWidths2 = [15, 50, 20, 20, 20, 25];
         const headers2 = ['Rank', 'Model', 'Predicted', 'Actual', 'Score', 'Win Rate'];
+        const headerHeight2 = 8;
+        
+        // Draw header background
+        doc.setFillColor(249, 250, 251); // gray-50
+        doc.rect(margin, yPos - headerHeight2 + 2, pageWidth - (margin * 2), headerHeight2, 'F');
+        
+        doc.setTextColor(55, 65, 81); // gray-700
         let xPos2 = margin;
         headers2.forEach((header, idx) => {
           doc.text(header, xPos2, yPos);
           xPos2 += colWidths2[idx];
         });
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight;
 
         // Table rows (show top 20 to avoid too many pages)
@@ -503,8 +549,12 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
           const isUserModel = ranking.rank === results.userRank;
           const predictedRankForModel = ranking.rank === results.userRank ? results.predictedRank : ranking.rank;
           
+          // Highlight user model row with background color
           if (isUserModel) {
+            doc.setFillColor(239, 246, 255); // primary-50
+            doc.rect(margin, yPos - lineHeight + 2, pageWidth - (margin * 2), lineHeight, 'F');
             doc.setFont('helvetica', 'bold');
+            doc.setTextColor(29, 78, 216); // primary-700
           }
           
           xPos2 = margin;
@@ -522,6 +572,7 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
           
           if (isUserModel) {
             doc.setFont('helvetica', 'normal');
+            doc.setTextColor(0, 0, 0); // Reset to black
           }
           
           yPos += lineHeight;
@@ -541,16 +592,29 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
       checkPageBreak(20);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235); // primary-600
       doc.text('Confidence Progression', margin, yPos);
+      doc.setTextColor(0, 0, 0); // Reset to black
       yPos += lineHeight * 1.5;
 
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
+      doc.setTextColor(107, 114, 128); // gray-500
       doc.text(`Before Testing: ${results.confidenceBefore}%`, margin, yPos);
       yPos += lineHeight;
+      doc.setTextColor(0, 0, 0); // Reset to black
+      
+      // After testing in primary color
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235); // primary-600
       doc.text(`After Testing: ${results.confidenceAfter}%`, margin, yPos);
       yPos += lineHeight;
+      
+      // Improvement in green
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(22, 163, 74); // green-600
       doc.text(`Improvement: +${results.confidenceAfter - results.confidenceBefore}%`, margin, yPos);
+      doc.setTextColor(0, 0, 0); // Reset to black
       yPos += lineHeight * 2;
 
       // Key Insights
@@ -558,7 +622,9 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         checkPageBreak(30);
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(37, 99, 235); // primary-600
         doc.text('Key Insights', margin, yPos);
+        doc.setTextColor(0, 0, 0); // Reset to black
         yPos += lineHeight * 1.5;
 
         doc.setFontSize(11);
@@ -566,9 +632,20 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
         insights.forEach((insight) => {
           checkPageBreak(15);
           doc.setFont('helvetica', 'bold');
+          // Use different colors based on insight type
+          if (insight.color === 'green') {
+            doc.setTextColor(22, 163, 74); // green-600
+          } else if (insight.color === 'blue') {
+            doc.setTextColor(37, 99, 235); // primary-600
+          } else if (insight.color === 'purple') {
+            doc.setTextColor(139, 92, 246); // purple-500
+          } else {
+            doc.setTextColor(0, 0, 0); // black
+          }
           doc.text(`${insight.icon} ${insight.title}`, margin, yPos);
           yPos += lineHeight;
           doc.setFont('helvetica', 'normal');
+          doc.setTextColor(0, 0, 0); // Reset to black
           doc.text(insight.description, margin + 5, yPos);
           yPos += lineHeight * 1.5;
         });

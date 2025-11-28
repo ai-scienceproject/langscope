@@ -2,6 +2,10 @@ import { getDomains } from '@/lib/db/services/domainService';
 import HomePage from '@/components/pages/HomePage';
 import type { Domain } from '@/types';
 
+// Disable caching to ensure fresh data on every page load
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Page() {
   // Fetch domains on the server for faster initial load
   let domains: Domain[] = [];

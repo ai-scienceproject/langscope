@@ -57,26 +57,27 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
     }
   }, []);
 
-  // Check if battle was completed and refresh domains if needed
+  // Always refresh domains on mount to get latest battle counts
+  // This ensures we have fresh data even after page refresh
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       
-      // Only fetch if we don't have initial domains
-      if (initialDomains.length === 0) {
+      // Always fetch fresh data on mount to get updated battle counts
+      // Use a small delay to avoid blocking initial render
+      const timer = setTimeout(() => {
         fetchDomains();
-      } else {
-        // Check if a battle was completed (stored in sessionStorage)
-        const battleCompleted = sessionStorage.getItem('battleCompleted');
-        if (battleCompleted === 'true') {
-          // Battle was completed, refresh domains to get updated counts
-          fetchDomains();
-          // Clear the flag
-          sessionStorage.removeItem('battleCompleted');
-        }
+      }, 100);
+      
+      // Clear battleCompleted flag if it exists
+      const battleCompleted = sessionStorage.getItem('battleCompleted');
+      if (battleCompleted === 'true') {
+        sessionStorage.removeItem('battleCompleted');
       }
+      
+      return () => clearTimeout(timer);
     }
-  }, [fetchDomains, initialDomains.length]);
+  }, [fetchDomains]);
 
   // Refresh domains when navigating to homepage if battle was completed
   useEffect(() => {

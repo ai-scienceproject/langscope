@@ -286,7 +286,7 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
               setShowJudgeModal(true);
             }}
           >
-            Test Top 5 Models
+            Start New Battle
           </Button>
         </div>
       </div>
