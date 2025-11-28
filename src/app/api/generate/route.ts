@@ -108,6 +108,18 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      // Handle forbidden errors (403) - usually means model access denied or API key issue
+      if (response.status === 403) {
+        return NextResponse.json(
+          { 
+            error: 'Access denied. The model may not be available or your API key may not have permission.',
+            details: errorMessage || 'Forbidden - Provider returned error',
+            success: false 
+          },
+          { status: 403 }
+        );
+      }
+      
       throw new Error(`OpenRouter API error: ${response.statusText} - ${errorMessage}`);
     }
 

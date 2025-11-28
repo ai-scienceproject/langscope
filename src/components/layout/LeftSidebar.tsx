@@ -113,32 +113,35 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       <aside className={cn(
         'border-r border-gray-200 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 shadow-sm z-40',
         'bg-[#F5F3FF]', // Light lavender background
-        collapsed ? 'w-12' : 'w-64 sm:w-72',
+        // On mobile when menu is open, always show full width with labels
+        mobileMenuOpen ? 'w-64 sm:w-72' : collapsed ? 'w-12' : 'w-64 sm:w-72',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         'lg:h-auto lg:min-h-screen lg:max-h-screen', // Ensure sidebar doesn't extend beyond viewport on desktop
-        'overflow-hidden' // Prevent scrollbars
+        'overflow-y-auto' // Allow scrolling on mobile to see login/signup
       )}>
       {/* Logo Section */}
-      <div className={cn("p-4 sm:p-4 pb-2", collapsed && "flex justify-center px-2")}>
-        <Link href="/" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
+      <div className={cn("p-3 sm:p-4 pb-2 flex-shrink-0", collapsed && !mobileMenuOpen && "flex justify-center px-2")}>
+        <Link href="/" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center", (collapsed && !mobileMenuOpen) ? "justify-center" : "gap-3")}>
           <Image 
             src="/logos/langscope.png" 
             alt="LangScope" 
             width={48} 
             height={48} 
-            className={cn("object-contain flex-shrink-0", collapsed ? "w-10 h-10" : "w-12 h-12")}
+            className={cn("object-contain flex-shrink-0", (collapsed && !mobileMenuOpen) ? "w-10 h-10" : "w-12 h-12")}
             priority
           />
-          {(!collapsed || mobileMenuOpen) && (
+          {(mobileMenuOpen || !collapsed) && (
             <span className="text-2xl font-bold text-black">LangScope</span>
           )}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
+      <nav className="flex-1 px-3 py-2 space-y-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
+          // On mobile when menu is open, always show labels
+          const showLabel = mobileMenuOpen || !collapsed;
           return (
             <Link
               key={item.name}
@@ -146,12 +149,12 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 group',
-                collapsed ? 'justify-center' : '',
+                (!showLabel && !mobileMenuOpen) ? 'justify-center' : '',
                 isActive
                   ? 'text-black'
                   : 'text-dark-gray hover:bg-light-gray hover:text-black'
               )}
-              title={collapsed ? item.name : undefined}
+              title={(!showLabel && !mobileMenuOpen) ? item.name : undefined}
             >
               <span className={cn(
                 'flex-shrink-0 transition-all duration-200',
@@ -161,19 +164,19 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
               )}>
                 {item.icon}
               </span>
-              {!collapsed && <span>{item.name}</span>}
+              {showLabel && <span>{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* User Section - Completely hidden when collapsed */}
-      {!collapsed && (
-        <>
+      {/* User Section - Show when expanded or mobile menu is open */}
+      {(mobileMenuOpen || !collapsed) && (
+        <div className="flex-shrink-0 pb-3">
           {isAuthenticated && user ? (
             <>
               {/* Upgrade Section */}
-              <div className="px-3 pt-4 pb-2">
+              <div className="px-3 pt-2 pb-2">
                 <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
                   <div className="text-xs font-semibold text-black mb-1">Current plan</div>
                   <div className="text-xs text-dark-gray mb-3">Free trial</div>
@@ -252,7 +255,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
     </aside>

@@ -172,10 +172,25 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
             });
             setStandings(modelStandings);
             
-            // Select first two models for battle
+            // Select first two models for battle (ensure they're different)
             if (modelStandings.length >= 2) {
-              setCurrentModelA(modelStandings[0]);
-              setCurrentModelB(modelStandings[1]);
+              const modelA = modelStandings[0];
+              const modelB = modelStandings[1];
+              
+              // Validate models are different
+              if (modelA.modelId !== modelB.modelId) {
+                setCurrentModelA(modelA);
+                setCurrentModelB(modelB);
+              } else if (modelStandings.length >= 2) {
+                // If first two are same, find a different one
+                const differentModel = modelStandings.find(m => m.modelId !== modelA.modelId);
+                if (differentModel) {
+                  setCurrentModelA(modelA);
+                  setCurrentModelB(differentModel);
+                } else {
+                  console.error('Cannot find two different models for battle');
+                }
+              }
             }
           }
         } catch (error) {
@@ -263,8 +278,16 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
           
           if (result.data.length >= 2) {
             const shuffled = [...result.data].sort(() => Math.random() - 0.5);
-            setCurrentModelA(shuffled[0] || null);
-            setCurrentModelB(shuffled[1] || shuffled[0] || null);
+            const modelA = shuffled[0];
+            // Ensure ModelB is different from ModelA
+            const modelB = shuffled.find(m => m.modelId !== modelA?.modelId) || shuffled[1];
+            
+            if (modelA && modelB && modelA.modelId !== modelB.modelId) {
+              setCurrentModelA(modelA);
+              setCurrentModelB(modelB);
+            } else {
+              console.error('Cannot find two different models for battle');
+            }
           }
         }
       } catch (error) {
@@ -351,6 +374,23 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
       return;
     }
     
+    // Validate that we have at least 2 different models
+    if (!modelIds || modelIds.length < 2) {
+      console.error('[LLM Evaluation] Error: Need at least 2 models for evaluation');
+      setIsLLMEvaluating(false);
+      alert('Error: Please select at least 2 different models for evaluation');
+      return;
+    }
+    
+    // Ensure models are different
+    const uniqueModelIds = [...new Set(modelIds)];
+    if (uniqueModelIds.length < 2) {
+      console.error('[LLM Evaluation] Error: Models must be different');
+      setIsLLMEvaluating(false);
+      alert('Error: Please select 2 different models for evaluation');
+      return;
+    }
+    
     setIsLLMEvaluating(true);
     llmEvaluationStartedRef.current = true;
     
@@ -358,7 +398,11 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     const totalBattles = Math.min(1, questions.length);
     setLlmProgress({ current: 0, total: totalBattles });
     
-    console.log(`[LLM Evaluation] Starting evaluation with models: ${modelIds[0]} vs ${modelIds[1]}, Judge: ${judgeId}, Questions: ${questions.length}, Battles: ${totalBattles}`);
+    // Use the first 2 unique models
+    const modelAId = uniqueModelIds[0];
+    const modelBId = uniqueModelIds[1];
+    
+    console.log(`[LLM Evaluation] Starting evaluation with models: ${modelAId} vs ${modelBId}, Judge: ${judgeId}, Questions: ${questions.length}, Battles: ${totalBattles}`);
 
     let completedBattles = 0;
     let createdEvaluationId = evaluationId;
@@ -366,8 +410,6 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     // For each question, evaluate the 2 models
     for (let qIdx = 0; qIdx < totalBattles; qIdx++) {
       const question = questions[qIdx].text;
-      const modelAId = modelIds[0];
-      const modelBId = modelIds[1];
       
       try {
         console.log(`Starting battle ${qIdx + 1}/${totalBattles}: Generating responses...`);

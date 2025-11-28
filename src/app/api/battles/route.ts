@@ -252,6 +252,14 @@ export async function POST(request: NextRequest) {
     const modelAIdStr = (modelA as any)._id?.toString() || (modelA as any).id?.toString();
     const modelBIdStr = (modelB as any)._id?.toString() || (modelB as any).id?.toString();
 
+    // Validate that ModelA and ModelB are different
+    if (modelAIdStr === modelBIdStr) {
+      return NextResponse.json(
+        { error: 'ModelA and ModelB must be different models' },
+        { status: 400 }
+      );
+    }
+
     // Get or create evaluation
     const EvaluationModel = (await import('@/lib/db/models/Evaluation')).default;
     let evalId = evaluationId;

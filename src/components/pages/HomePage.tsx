@@ -122,7 +122,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
       domains={domainsForSidebar}
     >
       {/* Hero Section */}
-      <section className="text-center py-4 sm:py-6 md:py-8 lg:py-10 relative overflow-hidden">
+      <section className="text-center pt-16 sm:pt-20 md:pt-24 lg:pt-28 pb-4 sm:pb-6 md:pb-8 lg:pb-10 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/4 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-dark-gray/5 rounded-full blur-3xl"></div>
