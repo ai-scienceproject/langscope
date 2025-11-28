@@ -174,7 +174,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
 
       {/* Mobile Domain Showcase - Show below hero search on mobile only */}
       <section className="lg:hidden bg-white rounded-2xl border border-gray-200 p-4 mb-4 mx-3 sm:mx-4">
-        <h3 className="text-lg font-bold text-black mb-3">Top Domains</h3>
+        <h3 className="text-lg font-bold text-black mb-3">Trending Domains</h3>
         <div className="space-y-2">
           {domains.slice(0, 5).map((domain) => (
             <div
