@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import SearchBar from '@/components/ui/SearchBar';
 import Button from '@/components/ui/Button';
+import HeroImage from '@/components/ui/HeroImage';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Domain } from '@/types';
 
@@ -123,7 +124,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
       domains={domainsForSidebar}
     >
       {/* Hero Section */}
-      <section className="text-center pt-16 sm:pt-20 md:pt-24 lg:pt-28 pb-4 sm:pb-6 md:pb-8 lg:pb-10 relative overflow-hidden">
+      <section className="text-center pt-0 pb-4 sm:pb-6 md:pb-8 lg:pb-10 relative overflow-hidden -mt-3 sm:-mt-4 md:-mt-6 lg:-mt-8 -mx-3 sm:-mx-4 md:-mx-6 lg:-mx-8">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/4 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-dark-gray/5 rounded-full blur-3xl"></div>
@@ -131,6 +132,11 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10 px-3 sm:px-4 md:px-6">
+          {/* Hero Image */}
+          <div className="mb-4 sm:mb-6 md:mb-8">
+            <HeroImage />
+          </div>
+          
           <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-gray-800 mb-4 sm:mb-5 leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
             Find the Perfect <span className="px-0.5 rounded-[8px] font-light inline-block mr-1" style={{ backgroundColor: 'rgb(187, 196, 196)', color: 'rgb(29, 61, 60)' }}>LLM</span> for Your <span className="px-0.5 rounded-[8px] font-light inline-block ml-1" style={{ backgroundColor: 'rgb(235, 232, 254)', color: 'rgb(29, 61, 60)' }}>Use Case</span>
           </h1>
