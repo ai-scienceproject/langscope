@@ -484,20 +484,20 @@ const DomainsSidebar: React.FC<{
 
       {/* Toggle button - only visible on desktop when collapsed */}
       {mounted && collapsed && (
-        <button
-          onClick={onToggleCollapse}
+      <button
+        onClick={onToggleCollapse}
           className="hidden lg:flex absolute top-4 -left-4 w-8 h-8 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:bg-gray-50 z-10"
               aria-label="Expand Trending Domains"
-        >
-          <svg
+      >
+        <svg
             className="w-4 h-4 text-gray-600 transition-transform rotate-180"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
       )}
       
     </aside>

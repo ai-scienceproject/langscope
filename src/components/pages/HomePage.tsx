@@ -88,7 +88,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
       if (battleCompleted === 'true') {
         fetchDomains();
         sessionStorage.removeItem('battleCompleted');
-      }
+    }
     }
     lastPathnameRef.current = pathname;
   }, [pathname, fetchDomains]);
@@ -133,16 +133,16 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
         
         <div className="max-w-4xl mx-auto relative z-10 px-3 sm:px-4 md:px-6">
           {/* Hero Image */}
-          <div className="mb-4 sm:mb-6 md:mb-8">
+          <div className="mb-1">
             <HeroImage />
           </div>
           
-          <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-gray-800 mb-4 sm:mb-5 leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+          <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-light text-gray-800 mb-2 sm:mb-3 leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
             Find the Perfect <span className="px-0.5 rounded-[8px] font-light inline-block mr-1" style={{ backgroundColor: 'rgb(187, 196, 196)', color: 'rgb(29, 61, 60)' }}>LLM</span> for Your <span className="px-0.5 rounded-[8px] font-light inline-block ml-1" style={{ backgroundColor: 'rgb(235, 232, 254)', color: 'rgb(29, 61, 60)' }}>Use Case</span>
           </h1>
 
           {/* Large Search Bar */}
-          <div className="max-w-3xl mx-auto mb-3 sm:mb-4">
+          <div className="max-w-3xl mx-auto mb-2">
             <div className="relative">
               <SearchBar
                 placeholder="Describe your use case..."

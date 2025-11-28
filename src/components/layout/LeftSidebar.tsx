@@ -24,7 +24,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
   const { user: authUser, isAuthenticated: authIsAuthenticated, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   // Use auth context values, fallback to props if provided
   const user = authUser || userProp;
   const isAuthenticated = authIsAuthenticated || isAuthenticatedProp;
@@ -45,7 +45,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
     } catch (error) {
       console.error('Logout error:', error);
       // Still redirect even if logout fails
-      router.push('/login');
+    router.push('/login');
     }
   };
 
@@ -173,32 +173,32 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       {/* User Section - Show when expanded or mobile menu is open */}
       {(mobileMenuOpen || !collapsed) && (
         <div className="flex-shrink-0 pb-3">
-          {isAuthenticated && user ? (
-            <>
-              {/* Upgrade Section */}
+      {isAuthenticated && user ? (
+        <>
+          {/* Upgrade Section */}
               <div className="px-3 pt-2 pb-2">
-                <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
-                  <div className="text-xs font-semibold text-black mb-1">Current plan</div>
-                  <div className="text-xs text-dark-gray mb-3">Free trial</div>
+              <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
+                <div className="text-xs font-semibold text-black mb-1">Current plan</div>
+                <div className="text-xs text-dark-gray mb-3">Free trial</div>
                   <button className="w-full bg-[#E8E3FF] text-[rgb(29,61,60)] text-xs font-semibold py-2 px-3 rounded-lg hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30">
-                    Upgrade to Pro
-                  </button>
-                  <p className="text-xs text-dark-gray mt-2 leading-tight">get the latest and exclusive features</p>
-                </div>
+                  Upgrade to Pro
+                </button>
+                <p className="text-xs text-dark-gray mt-2 leading-tight">get the latest and exclusive features</p>
               </div>
+            </div>
 
-              {/* User Profile */}
+          {/* User Profile */}
               <div className="px-3 pt-2 pb-1">
-                <div className={cn(
+            <div className={cn(
                   "flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-light-gray transition-colors cursor-pointer group"
-                )}>
+            )}>
                   <div className="w-8 h-8 rounded-lg bg-[#E8E3FF] flex items-center justify-center text-[rgb(29,61,60)] text-xs font-semibold shadow-sm flex-shrink-0">
-                    {user.avatar ? (
+                {user.avatar ? (
                       <img src={user.avatar} alt={user.name} className="w-full h-full rounded-lg object-cover" />
-                    ) : (
-                      user.name.charAt(0).toUpperCase()
-                    )}
-                  </div>
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+              </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold text-black truncate">{user.name}</div>
                     <div className="text-[10px] text-dark-gray truncate">{user.email}</div>
@@ -211,29 +211,29 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </div>
-              </div>
+            </div>
+          </div>
 
-              {/* Logout */}
+          {/* Logout */}
               <div className="px-3 pb-3 pt-1">
-                <button
-                  onClick={handleLogout}
+            <button
+              onClick={handleLogout}
                   className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
-                >
-                  <svg
+            >
+              <svg
                     className="w-4 h-4 text-dark-gray group-hover:text-red-500 transition-colors"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
                   <span>Logout</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            /* Login/Signup Section */
+            </button>
+          </div>
+        </>
+      ) : (
+        /* Login/Signup Section */
             <div className="px-3 pb-3 pt-3 space-y-1.5">
               <button
                 onClick={() => {

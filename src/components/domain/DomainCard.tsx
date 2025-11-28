@@ -36,11 +36,11 @@ const DomainCard: React.FC<DomainCardProps> = ({
       <div className="flex flex-col h-full">
         {/* Icon and Title in line */}
         <div className="flex items-center gap-3 mb-2 sm:mb-3">
-          <div 
+        <div 
             className="flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0"
-          >
-            {domain.icon}
-          </div>
+        >
+          {domain.icon}
+        </div>
           <h3 className="text-sm sm:text-base font-bold text-black group-hover:text-dark-gray transition-colors">
             {domain.name}
           </h3>

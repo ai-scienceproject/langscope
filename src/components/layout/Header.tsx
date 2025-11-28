@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ user: userProp, isAuthenticated: isAuth
     } catch (error) {
       console.error('Logout error:', error);
       // Still redirect even if logout fails
-      router.push('/login');
+    router.push('/login');
     }
   };
 
