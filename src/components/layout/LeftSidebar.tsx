@@ -114,14 +114,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
         'border-r border-gray-200 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 shadow-sm z-40',
         'bg-[#F5F3FF]', // Light lavender background
         // On mobile when menu is open, always show full width with labels
-        mobileMenuOpen ? 'w-64 sm:w-72' : collapsed ? 'w-12' : 'w-64 sm:w-72',
+        mobileMenuOpen ? 'w-52' : collapsed ? 'w-12' : 'w-52',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         'lg:h-auto lg:min-h-screen lg:max-h-screen', // Ensure sidebar doesn't extend beyond viewport on desktop
         'overflow-y-auto' // Allow scrolling on mobile to see login/signup
       )}>
       {/* Logo Section */}
-      <div className={cn("p-3 sm:p-4 pb-2 flex-shrink-0", collapsed && !mobileMenuOpen && "flex justify-center px-2")}>
-        <Link href="/" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center", (collapsed && !mobileMenuOpen) ? "justify-center" : "gap-3")}>
+      <div className={cn("pl-2 pr-1 pt-2 pb-2 sm:pl-3 sm:pr-1.5 sm:pt-3 flex-shrink-0", collapsed && !mobileMenuOpen && "flex justify-center px-2")}>
+        <Link href="/" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center", (collapsed && !mobileMenuOpen) ? "justify-center" : "gap-2")}>
           <Image 
             src="/logos/langscope.png" 
             alt="LangScope" 
@@ -137,7 +137,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
+      <nav className="flex-1 pl-2 pr-1 py-2 space-y-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           // On mobile when menu is open, always show labels
@@ -148,7 +148,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-semibold transition-all duration-200 group',
+                'flex items-center gap-2 pl-2 pr-1 py-2 rounded-xl text-base font-semibold transition-all duration-200 group',
                 (!showLabel && !mobileMenuOpen) ? 'justify-center' : '',
                 isActive
                   ? 'text-black'
@@ -172,27 +172,27 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
 
       {/* User Section - Show when expanded or mobile menu is open */}
       {(mobileMenuOpen || !collapsed) && (
-        <div className="flex-shrink-0 pb-3">
+        <div className="flex-shrink-0 pb-2">
       {isAuthenticated && user ? (
         <>
           {/* Upgrade Section */}
-              <div className="px-3 pt-2 pb-2">
-              <div className="bg-light-gray rounded-xl p-4 border border-gray-200">
-                <div className="text-xs font-semibold text-black mb-1">Current plan</div>
-                <div className="text-xs text-dark-gray mb-3">Free trial</div>
-                  <button className="w-full bg-[#E8E3FF] text-[rgb(29,61,60)] text-xs font-semibold py-2 px-3 rounded-lg hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30">
+              <div className="pl-2 pr-1 pt-2 pb-2">
+              <div className="bg-light-gray rounded-xl p-3 border border-gray-200">
+                <div className="text-sm font-semibold text-black mb-1">Current plan</div>
+                <div className="text-sm text-dark-gray mb-2">Free trial</div>
+                  <button className="w-full bg-[#E8E3FF] text-[rgb(29,61,60)] text-sm font-semibold py-1.5 px-2 rounded-lg hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30">
                   Upgrade to Pro
                 </button>
-                <p className="text-xs text-dark-gray mt-2 leading-tight">get the latest and exclusive features</p>
+                <p className="text-sm text-dark-gray mt-1.5 leading-tight">get the latest and exclusive features</p>
               </div>
             </div>
 
           {/* User Profile */}
-              <div className="px-3 pt-2 pb-1">
+              <div className="pl-2 pr-1 pt-1 pb-1">
             <div className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-light-gray transition-colors cursor-pointer group"
+                  "flex items-center gap-2 pl-2 pr-1 py-1.5 rounded-lg hover:bg-light-gray transition-colors cursor-pointer group"
             )}>
-                  <div className="w-8 h-8 rounded-lg bg-[#E8E3FF] flex items-center justify-center text-[rgb(29,61,60)] text-xs font-semibold shadow-sm flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#E8E3FF] flex items-center justify-center text-[rgb(29,61,60)] text-sm font-semibold shadow-sm flex-shrink-0">
                 {user.avatar ? (
                       <img src={user.avatar} alt={user.name} className="w-full h-full rounded-lg object-cover" />
                 ) : (
@@ -200,8 +200,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                 )}
               </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-black truncate">{user.name}</div>
-                    <div className="text-[10px] text-dark-gray truncate">{user.email}</div>
+                    <div className="text-sm font-semibold text-black truncate">{user.name}</div>
+                    <div className="text-xs text-dark-gray truncate">{user.email}</div>
                   </div>
                   <svg
                     className="w-3 h-3 text-dark-gray group-hover:text-black transition-colors flex-shrink-0"
@@ -215,10 +215,10 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
           </div>
 
           {/* Logout */}
-              <div className="px-3 pb-3 pt-1">
+              <div className="pl-2 pr-1 pb-2 pt-1">
             <button
               onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+                  className="flex items-center gap-2 w-full pl-2 pr-1 py-1.5 rounded-lg text-sm font-medium text-dark-gray hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
             >
               <svg
                     className="w-4 h-4 text-dark-gray group-hover:text-red-500 transition-colors"
@@ -234,13 +234,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
         </>
       ) : (
         /* Login/Signup Section */
-            <div className="px-3 pb-3 pt-3 space-y-1.5">
+            <div className="pl-2 pr-1 pb-2 pt-2 space-y-1.5">
               <button
                 onClick={() => {
                   router.push('/login');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg text-xs font-bold text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                className="w-full pl-2 pr-1 py-1.5 rounded-lg text-sm font-bold text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
               >
                 Log in
               </button>
@@ -249,7 +249,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
                   router.push('/signup');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg text-xs font-bold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30 flex items-center justify-center"
+                className="w-full pl-2 pr-1 py-1.5 rounded-lg text-sm font-bold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30 flex items-center justify-center"
               >
                 Sign up
               </button>

@@ -163,7 +163,7 @@ export default function LoginPage() {
               variant="primary"
               size="lg"
               loading={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-300 transform hover:scale-[1.02]"
+              className="w-full rounded-xl"
             >
               Sign in
             </Button>

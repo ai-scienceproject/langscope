@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import Button from '@/components/ui/Button';
@@ -64,12 +64,29 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
   const questionsFetchedRef = useRef(false);
   const resultsFetchedRef = useRef(false);
   const llmEvaluationStartedRef = useRef(false); // Prevent duplicate LLM evaluations
+  const evaluationCheckedRef = useRef(false);
+  const hasExistingEvaluationRef = useRef(false);
   
-  // Check if battle is already complete on mount (for page reloads)
+  // Check if battle is already complete on mount (for page reloads and back navigation)
   useEffect(() => {
     const checkExistingBattle = async () => {
-      // Check if evaluationId exists in URL or we should check for existing evaluation
+      // Reset flags if no evaluationId in URL (fresh start)
       const urlEvalId = searchParams.get('evaluationId');
+      if (!urlEvalId || urlEvalId === 'null' || urlEvalId.startsWith('eval-')) {
+        // Reset flags for new battle
+        evaluationCheckedRef.current = false;
+        hasExistingEvaluationRef.current = false;
+        llmEvaluationStartedRef.current = false;
+        modelsFetchedRef.current = false;
+        questionsFetchedRef.current = false;
+        resultsFetchedRef.current = false;
+        return;
+      }
+      
+      if (evaluationCheckedRef.current) return;
+      evaluationCheckedRef.current = true;
+      
+      // Check if evaluationId exists in URL and evaluation is complete
       if (urlEvalId && urlEvalId !== 'null' && !urlEvalId.startsWith('eval-')) {
         try {
           // Check if evaluation exists and has completed battles
@@ -77,12 +94,14 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
           if (evalResponse.ok) {
             const evalData = await evalResponse.json();
             if (evalData.data && evalData.data.completedBattles > 0) {
+              hasExistingEvaluationRef.current = true;
               setEvaluationId(urlEvalId);
               setBattleComplete(true);
-              if (!resultsFetchedRef.current) {
-                resultsFetchedRef.current = true;
-                await fetchBattleResults();
-              }
+              // Redirect to results page if coming from back button
+              const judgeModelId = searchParams.get('judgeModelId');
+              const judgeParam = judgeModelId ? `&judgeModelId=${encodeURIComponent(judgeModelId)}` : '';
+              window.location.href = `/results/${urlEvalId}?domain=${domainSlug}${judgeParam}`;
+              return;
             }
           }
         } catch (error) {
@@ -92,7 +111,7 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     };
     
     checkExistingBattle();
-  }, []); // Only run on mount
+  }, [searchParams, domainSlug]); // Include searchParams and domainSlug in dependencies
   
   // Fetch questions only once when domainSlug is available
   useEffect(() => {
@@ -120,6 +139,78 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     fetchQuestions();
   }, [domainSlug]); // Removed questionsLoaded from dependencies
   
+  // Initialize LLM evaluation (extracted function to prevent duplicate submissions)
+  const initializeLLMEvaluation = useCallback(async () => {
+    if (llmEvaluationStartedRef.current || isLLMEvaluating || hasExistingEvaluationRef.current) {
+      return;
+    }
+    
+    modelsFetchedRef.current = true;
+    // For LLM judge: select 2 random models ONCE and use them for all questions
+    try {
+      const modelsResponse = await fetch('/api/openrouter/models');
+      const modelsResult = await modelsResponse.json();
+      if (modelsResponse.ok && modelsResult.data) {
+        const shuffled = [...modelsResult.data].sort(() => Math.random() - 0.5);
+        const selected2 = shuffled.slice(0, 2);
+        setAvailableModels(selected2);
+        
+        // Select a random model as judge (different from the 2 being evaluated)
+        const judgeModels = modelsResult.data.filter((m: OpenRouterModel) => 
+          !selected2.some((s: OpenRouterModel) => s.id === m.id)
+        );
+        let judgeId = '';
+        if (judgeModels.length > 0) {
+          const randomJudge = judgeModels[Math.floor(Math.random() * judgeModels.length)];
+          judgeId = randomJudge.id;
+          setJudgeModelId(randomJudge.id);
+        } else if (modelsResult.data.length > 0) {
+          // Fallback: use any model if we can't find a different one
+          const randomJudge = modelsResult.data[Math.floor(Math.random() * modelsResult.data.length)];
+          judgeId = randomJudge.id;
+          setJudgeModelId(randomJudge.id);
+        }
+        
+        // Create standings for the 2 models being evaluated
+        const modelStandings: ModelStanding[] = selected2.map((model: OpenRouterModel, idx: number) => {
+          const provider = model.provider || getProviderFromModelId(model.id);
+          const logo = getOrganizationLogo(provider);
+          return {
+            modelId: model.id,
+            model: {
+              id: model.id,
+              name: model.name,
+              slug: model.id,
+              provider: provider,
+              logo: logo,
+              description: '',
+              type: 'api-only' as const,
+              contextLength: 0,
+              costPer1MTokens: 0,
+              verified: true,
+              releaseDate: new Date(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            rank: idx + 1,
+            score: 1000,
+            battles: 0,
+            change: 0,
+          };
+        });
+        setStandings(modelStandings);
+        
+        // Start automatic LLM evaluation (only once)
+        if (judgeId && !llmEvaluationStartedRef.current) {
+          llmEvaluationStartedRef.current = true;
+          startLLMEvaluation(selected2.map((m: OpenRouterModel) => m.id), judgeId);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching models for LLM judge:', error);
+    }
+  }, [isLLMEvaluating]);
+
   // Initialize: Fetch models based on judge type
   useEffect(() => {
     const initialize = async () => {
@@ -202,96 +293,52 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
           return;
         }
         
-        modelsFetchedRef.current = true;
-        // For LLM judge: select 2 random models ONCE and use them for all questions
-        try {
-          const modelsResponse = await fetch('/api/openrouter/models');
-          const modelsResult = await modelsResponse.json();
-          if (modelsResponse.ok && modelsResult.data) {
-            const shuffled = [...modelsResult.data].sort(() => Math.random() - 0.5);
-            const selected2 = shuffled.slice(0, 2);
-            setAvailableModels(selected2);
-            
-            // Select a random model as judge (different from the 2 being evaluated)
-            const judgeModels = modelsResult.data.filter((m: OpenRouterModel) => 
-              !selected2.some((s: OpenRouterModel) => s.id === m.id)
-            );
-            let judgeId = '';
-            if (judgeModels.length > 0) {
-              const randomJudge = judgeModels[Math.floor(Math.random() * judgeModels.length)];
-              judgeId = randomJudge.id;
-              setJudgeModelId(randomJudge.id);
-            } else if (modelsResult.data.length > 0) {
-              // Fallback: use any model if we can't find a different one
-              const randomJudge = modelsResult.data[Math.floor(Math.random() * modelsResult.data.length)];
-              judgeId = randomJudge.id;
-              setJudgeModelId(randomJudge.id);
-            }
-            
-            // Create standings for the 2 models being evaluated
-            const modelStandings: ModelStanding[] = selected2.map((model: OpenRouterModel, idx: number) => {
-              const provider = model.provider || getProviderFromModelId(model.id);
-              const logo = getOrganizationLogo(provider);
-              return {
-                modelId: model.id,
-                model: {
-                  id: model.id,
-                  name: model.name,
-                  slug: model.id,
-                  provider: provider,
-                  logo: logo,
-                  description: '',
-                  type: 'api-only' as const,
-                  contextLength: 0,
-                  costPer1MTokens: 0,
-                  verified: true,
-                  releaseDate: new Date(),
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                },
-                rank: idx + 1,
-                score: 1000,
-                battles: 0,
-                change: 0,
-              };
-            });
-            setStandings(modelStandings);
-            
-            // Start automatic LLM evaluation (only once)
-            if (judgeId && !llmEvaluationStartedRef.current) {
-              llmEvaluationStartedRef.current = true;
-              startLLMEvaluation(selected2.map((m: OpenRouterModel) => m.id), judgeId);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching models for LLM judge:', error);
+        // Don't start new evaluation if we have an existing one (from back navigation)
+        if (hasExistingEvaluationRef.current) {
+          return;
         }
+        
+        // Check if there's an evaluationId in URL - if so, wait for check to complete
+        const urlEvalId = searchParams.get('evaluationId');
+        if (urlEvalId && urlEvalId !== 'null' && !urlEvalId.startsWith('eval-')) {
+          // Wait a bit for evaluation check to complete
+          setTimeout(() => {
+            if (!hasExistingEvaluationRef.current && !llmEvaluationStartedRef.current) {
+              // Evaluation check completed, no existing evaluation found, proceed with initialization
+              initializeLLMEvaluation();
+            }
+          }, 200);
+          return;
+        }
+        
+        // No evaluationId in URL, proceed with new evaluation
+        initializeLLMEvaluation();
       } else {
         // Fallback: use existing standings API
         const fetchStandings = async () => {
-      try {
-        const response = await fetch(`/api/arena/${domainSlug}/standings`);
-        const result = await response.json();
-        
-        if (response.ok && result.data) {
-          setStandings(result.data);
-          
-          if (result.data.length >= 2) {
-            const shuffled = [...result.data].sort(() => Math.random() - 0.5);
-            const modelA = shuffled[0];
-            // Ensure ModelB is different from ModelA
-            const modelB = shuffled.find(m => m.modelId !== modelA?.modelId) || shuffled[1];
+          try {
+            const response = await fetch(`/api/arena/${domainSlug}/standings`);
+            const result = await response.json();
             
-            if (modelA && modelB && modelA.modelId !== modelB.modelId) {
-              setCurrentModelA(modelA);
-              setCurrentModelB(modelB);
-            } else {
-              console.error('Cannot find two different models for battle');
+            if (response.ok && result.data) {
+              setStandings(result.data);
+              
+              if (result.data.length >= 2) {
+                const shuffled = [...result.data].sort(() => Math.random() - 0.5);
+                const modelA = shuffled[0];
+                // Ensure ModelB is different from ModelA
+                const modelB = shuffled.find(m => m.modelId !== modelA?.modelId) || shuffled[1];
+                
+                if (modelA && modelB && modelA.modelId !== modelB.modelId) {
+                  setCurrentModelA(modelA);
+                  setCurrentModelB(modelB);
+                } else {
+                  console.error('Cannot find two different models for battle');
+                }
+              }
             }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching standings:', error);
+          } catch (error) {
+            console.error('Error fetching standings:', error);
           }
         };
         fetchStandings();
@@ -299,7 +346,7 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     };
 
     initialize();
-  }, [domainSlug, judgeType, questionsLoaded]); // Removed selectedModelIds from dependencies to prevent re-runs
+  }, [domainSlug, judgeType, questionsLoaded, initializeLLMEvaluation, searchParams]); // Added initializeLLMEvaluation and searchParams
   
   // Fetch results when battle is complete and standings are ready (separate effect to avoid duplicate calls)
   useEffect(() => {
@@ -1181,10 +1228,17 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
               <Button
                 variant="primary"
                 onClick={() => {
+                  // Reset all flags and state for new battle
                   setBattleComplete(false);
                   setBattleIndex(1);
                   setSelectedVote(null);
                   setEvaluationId(null);
+                  evaluationCheckedRef.current = false;
+                  hasExistingEvaluationRef.current = false;
+                  llmEvaluationStartedRef.current = false;
+                  modelsFetchedRef.current = false;
+                  questionsFetchedRef.current = false;
+                  resultsFetchedRef.current = false;
                   // Reset to start new battle
                   window.location.href = `/arena/${domainSlug}`;
                 }}
