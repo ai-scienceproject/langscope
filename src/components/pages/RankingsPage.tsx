@@ -13,7 +13,7 @@ import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import Image from 'next/image';
-import type { Domain, ModelRanking, FilterState } from '@/types';
+import type { Domain, ModelRanking } from '@/types';
 
 interface RankingsPageProps {
   domainSlug: string;
@@ -35,17 +35,6 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [showJudgeModal, setShowJudgeModal] = useState(false);
   const router = useRouter();
-  
-  const [filters, setFilters] = useState<FilterState>({
-    costRange: [0, 100],
-    modelTypes: [],
-    providers: [],
-    contextLength: [0, 200000],
-    verified: null,
-    costFilter: [],
-    contextFilter: [],
-    sortBy: 'elo',
-  });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -149,10 +138,7 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
 
     return (
     <Layout
-      showSidebar={true}
-      sidebarType="filter"
-      filters={filters}
-      onFilterChange={setFilters}
+      showSidebar={false}
     >
       {/* Top Bar: Breadcrumb, Confidence, Transfer Domains */}
       {domain && (
@@ -285,8 +271,9 @@ const RankingsPage: React.FC<RankingsPageProps> = ({ domainSlug }) => {
               }
               setShowJudgeModal(true);
             }}
+            className="flex items-center gap-[10px] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-8 py-[10px] rounded-[50px] border-0 hover:opacity-90 transition-all duration-200 shadow-lg"
           >
-            Start New Battle
+            Start Battle
           </Button>
         </div>
       </div>

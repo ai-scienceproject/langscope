@@ -38,6 +38,16 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
   const searchParams = useSearchParams();
   const judgeType = searchParams.get('judge') as 'human' | 'llm' | null;
   const selectedModelIds = searchParams.get('models')?.split(',') || [];
+  
+  // Check if coming from results page via back button - redirect to home
+  useEffect(() => {
+    const referrer = document.referrer;
+    if (referrer && referrer.includes('/results/')) {
+      // Coming from results page, redirect to home
+      window.location.replace('/');
+      return;
+    }
+  }, []);
 
   const [battleIndex, setBattleIndex] = useState(1);
   const [totalBattles] = useState(1);
@@ -121,18 +131,30 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     
     const fetchQuestions = async () => {
       try {
+        console.log(`[Questions] Fetching questions for domain: ${domainSlug}`);
         const questionsResponse = await fetch(`/api/openrouter/questions?domain=${domainSlug}&count=1`);
         const questionsResult = await questionsResponse.json();
-        if (questionsResponse.ok && questionsResult.data) {
+        console.log(`[Questions] API response:`, questionsResult);
+        
+        if (questionsResponse.ok && questionsResult.data && questionsResult.data.length > 0) {
+          console.log(`[Questions] Setting ${questionsResult.data.length} questions`);
           setQuestions(questionsResult.data);
-          if (questionsResult.data.length > 0) {
-            setTestCaseContext(questionsResult.data[0].text);
-          }
+          setTestCaseContext(questionsResult.data[0].text);
           setQuestionsLoaded(true);
+          console.log(`[Questions] Questions loaded successfully`);
+        } else {
+          console.error('[Questions] No questions returned from API:', questionsResult);
+          // Reset to allow retry
+          questionsFetchedRef.current = false;
+          setQuestionsLoaded(false);
+          // Show error to user
+          alert('Failed to load questions for this domain. Please try again.');
         }
       } catch (error) {
-        console.error('Error fetching questions:', error);
+        console.error('[Questions] Error fetching questions:', error);
         questionsFetchedRef.current = false; // Reset on error to allow retry
+        setQuestionsLoaded(false);
+        alert('Error loading questions. Please refresh the page and try again.');
       }
     };
     
@@ -142,6 +164,12 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
   // Initialize LLM evaluation (extracted function to prevent duplicate submissions)
   const initializeLLMEvaluation = useCallback(async () => {
     if (llmEvaluationStartedRef.current || isLLMEvaluating || hasExistingEvaluationRef.current) {
+      return;
+    }
+    
+    // Ensure questions are actually available before starting
+    if (!questions || questions.length === 0) {
+      console.log('[LLM Evaluation] Waiting for questions to be available...');
       return;
     }
     
@@ -209,13 +237,13 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     } catch (error) {
       console.error('Error fetching models for LLM judge:', error);
     }
-  }, [isLLMEvaluating]);
+  }, [isLLMEvaluating, questions]);
 
   // Initialize: Fetch models based on judge type
   useEffect(() => {
     const initialize = async () => {
-      // Only proceed if we have questions loaded
-      if (!questionsLoaded) return;
+      // Only proceed if we have questions loaded AND questions are actually available
+      if (!questionsLoaded || !questions || questions.length === 0) return;
       
       // Prevent multiple fetches
       if (modelsFetchedRef.current) return;
@@ -346,7 +374,7 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
     };
 
     initialize();
-  }, [domainSlug, judgeType, questionsLoaded, initializeLLMEvaluation, searchParams]); // Added initializeLLMEvaluation and searchParams
+  }, [domainSlug, judgeType, questionsLoaded, questions, initializeLLMEvaluation, searchParams]); // Added questions to dependencies
   
   // Fetch results when battle is complete and standings are ready (separate effect to avoid duplicate calls)
   useEffect(() => {
@@ -437,6 +465,19 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
       alert('Error: Please select 2 different models for evaluation');
       return;
     }
+    
+    // Validate that we have questions
+    if (!questions || questions.length === 0) {
+      console.error('[LLM Evaluation] Error: No questions available for evaluation');
+      console.error('[LLM Evaluation] Questions state:', questions);
+      console.error('[LLM Evaluation] Questions loaded flag:', questionsLoaded);
+      setIsLLMEvaluating(false);
+      llmEvaluationStartedRef.current = false; // Reset flag to allow retry
+      // Don't show alert here - let the initialization handle it
+      return;
+    }
+    
+    console.log(`[LLM Evaluation] Starting with ${questions.length} questions available`);
     
     setIsLLMEvaluating(true);
     llmEvaluationStartedRef.current = true;
@@ -656,7 +697,17 @@ const ArenaBattlePage: React.FC<ArenaBattlePageProps> = ({ domainSlug }) => {
       }
     }
 
-    console.log('LLM evaluation complete. Redirecting to results...');
+    console.log('LLM evaluation complete. Checking if battles were created...');
+    
+    // Only proceed if battles were actually created
+    if (completedBattles === 0) {
+      console.error('[LLM Evaluation] No battles were created. Evaluation cannot be completed.');
+      setIsLLMEvaluating(false);
+      llmEvaluationStartedRef.current = false; // Reset to allow retry
+      alert('Error: No battles could be created. Please ensure questions are available and try again.');
+      return;
+    }
+    
     setIsLLMEvaluating(false);
     
     // Ensure flag is set for homepage refresh (in case it wasn't set in the loop)

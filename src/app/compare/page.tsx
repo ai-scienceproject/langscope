@@ -167,12 +167,9 @@ function CompareContent() {
             </div>
 
             {/* Actions */}
-            <div className="mt-8 flex items-center justify-between">
+            <div className="mt-8 flex items-center justify-start">
               <Button variant="outline" onClick={() => window.history.back()}>
                 ← Back to Rankings
-              </Button>
-              <Button variant="primary" onClick={() => window.location.href = '/arena'}>
-                Test in Arena →
               </Button>
             </div>
           </>

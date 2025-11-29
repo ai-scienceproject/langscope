@@ -34,6 +34,15 @@ export async function getDomainBySlug(slug: string) {
   return Domain.findOne({ slug, isActive: true }).lean();
 }
 
+export async function getDomainByName(name: string) {
+  await connectDB();
+  // Case-insensitive exact match
+  return Domain.findOne({ 
+    name: { $regex: new RegExp(`^${name}$`, 'i') }, 
+    isActive: true 
+  }).lean();
+}
+
 export async function createDomain(data: {
   name: string;
   slug: string;

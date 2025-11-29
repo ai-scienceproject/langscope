@@ -25,7 +25,6 @@ function ensureDatabaseName(uri: string): string {
       if (slashIndex === -1 || (slashIndex === afterAt.length - 1)) {
         const dbName = 'langscope';
         uri = baseUrl + '/' + dbName + queryString;
-        console.log('📝 Added database name to connection string:', dbName);
       }
     }
   } else if (uri.startsWith('mongodb://')) {
@@ -37,7 +36,6 @@ function ensureDatabaseName(uri: string): string {
     if (!baseUrl.includes('/') || baseUrl.endsWith('/')) {
       const dbName = 'langscope';
       uri = baseUrl.replace(/\/$/, '') + '/' + dbName + queryString;
-      console.log('📝 Added database name to connection string:', dbName);
     }
   }
 

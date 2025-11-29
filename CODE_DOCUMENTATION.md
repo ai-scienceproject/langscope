@@ -292,6 +292,71 @@ async function connectDB(): Promise<typeof mongoose> {
 2. Calls `getDomainBySlug()` service function
 3. Returns domain data
 
+#### POST `/api/identify-domain`
+
+**Purpose**: Identify domain from user text and optional file using LLM.
+
+**Implementation** (`src/app/api/identify-domain/route.ts`):
+1. Accepts `FormData` with `text` (mandatory) and optional `file` (image or PDF)
+2. **Database Check**: If only text provided, first checks database for exact case-insensitive match using `getDomainByName()`
+3. **LLM Identification**: If no match found or file provided:
+   - For images: Uses OCR (tesseract.js) to extract text
+   - For PDFs: Extracts text content
+   - Combines extracted text with user text
+   - Calls OpenRouter API with Llama model (`meta-llama/llama-3.2-3b-instruct:free`)
+   - Uses retry logic with exponential backoff for rate limiting (handles 429 errors)
+4. Returns identified domain name
+
+**Request**:
+- `text`: User-provided text (mandatory)
+- `file`: Optional image or PDF file
+
+**Response**:
+```json
+{
+  "domainName": "Finance"
+}
+```
+
+**Error Handling**:
+- Validates that text is mandatory
+- Validates file types (only images and PDFs allowed)
+- Handles OpenRouter API rate limiting with retry logic
+- Returns appropriate error messages
+
+#### POST `/api/domains/check-or-create`
+
+**Purpose**: Check if domain exists or create new domain.
+
+**Implementation** (`src/app/api/domains/check-or-create/route.ts`):
+1. Accepts `domainName` in request body
+2. Generates slug from domain name using `slugify` utility
+3. Checks if domain exists by slug
+4. If not found, creates new domain with default values:
+   - `isActive: true`
+   - `icon: '📋'` (default icon)
+   - `description: ''` (empty description)
+5. Returns domain details and existence status
+
+**Request**:
+```json
+{
+  "domainName": "Finance"
+}
+```
+
+**Response**:
+```json
+{
+  "exists": true,
+  "domain": {
+    "id": "...",
+    "name": "Finance",
+    "slug": "finance"
+  }
+}
+```
+
 ### Rankings APIs
 
 #### GET `/api/rankings/[domain]`
@@ -650,10 +715,11 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 #### HomePage (`src/components/pages/HomePage.tsx`)
 
-**Purpose**: Main landing page.
+**Purpose**: Main landing page with domain identification feature.
 
 **Features**:
-- Hero section with large search bar
+- Hero section with animated hero image and large search bar
+- **Domain Identification**: Search bar with file upload support (images/PDFs) for domain identification
 - Features section (4 feature cards)
 - "How It Works" section (3 steps)
 - Trending Domains sidebar (right side)
@@ -662,24 +728,44 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 **Data Flow**:
 1. **Server-Side Rendering**: Domains are fetched on the server in `src/app/page.tsx` for fast initial load
 2. Domains are passed as `initialDomains` prop to HomePage component
-3. If initial domains are not provided, falls back to client-side fetch via `/api/domains` endpoint
-4. Transforms MongoDB data to Domain type
-5. Sorts domains by battle count (descending)
-6. Adds "#" prefix to domain names for homepage display only
-7. Passes domains to Layout for sidebar display as "Trending Domains"
+3. Only fetches fresh data if a battle was completed (uses sessionStorage flag)
+4. Otherwise uses server-rendered initial data for instant loading
+5. Transforms MongoDB data to Domain type
+6. Sorts domains by battle count (descending)
+7. Adds "#" prefix to domain names for homepage display only
+8. Passes domains to Layout for sidebar display as "Trending Domains"
 
 **State**:
 - `domains`: Array of domain objects (initialized from server-side data)
 - `searchQuery`: Current search input value
+- `selectedFile`: Uploaded file (image or PDF) for domain identification
+- `isIdentifying`: Loading state for domain identification
+- `identifiedDomain`: Identified domain from LLM
+- `showModal`: Controls domain identification modal visibility
+- `showJudgeModal`: Controls judge selection modal visibility
 
-**Search Functionality**:
-- Search bar updates `searchQuery` state
-- `handleSearch` function processes search (currently placeholder)
-- Trending Domains sidebar is not affected by search (always shows all domains)
+**Domain Identification Flow**:
+1. User enters text (mandatory) and optionally uploads an image/PDF
+2. On "Search Domain" button click, calls `/api/identify-domain`:
+   - If only text: First checks database for exact case-insensitive match
+   - If match found: Returns domain immediately
+   - If no match or file provided: Calls LLM (Llama via OpenRouter) for identification
+   - For images: Uses OCR (tesseract.js) to extract text first
+   - For PDFs: Extracts text content
+3. After identification, calls `/api/domains/check-or-create` to ensure domain exists
+4. Shows `DomainIdentificationModal` with identified domain
+5. User can retry, view rankings, or start battle from modal
+
+**Search Button Styling**:
+- Gradient background: Purple → Blue → Teal (`from-purple-500 via-blue-500 to-teal-400`)
+- White text
+- Pill shape (`rounded-[50px]`)
+- Shadow and hover effects
 
 **Performance Optimization**:
 - Server-side data fetching eliminates client-side API delay
 - Domains are available immediately when page renders
+- Only refreshes data when battle is completed (not on every navigation)
 - Trending Domains sidebar appears instantly without loading delay
 
 #### RankingsPage (`src/components/pages/RankingsPage.tsx`)
@@ -690,7 +776,9 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Domain header with name and description
 - Rankings table with sortable columns
 - Model details modal on row click
-- Live standings updates
+- **No filters sidebar**: Filters sidebar has been removed
+- "Start Battle" button with gradient styling
+- Compare models functionality
 
 **Data Flow**:
 1. Extracts `domainSlug` from URL parameters
@@ -705,6 +793,16 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - `loading`: Loading state
 - `error`: Error message
 - `selectedModelId`: ID of model for details modal
+- `compareMode`: Whether compare mode is active
+- `selectedModels`: Array of selected model IDs for comparison
+- `showJudgeModal`: Controls judge selection modal visibility
+
+**Start Battle Button**:
+- Gradient background: Blue → Purple → Pink (`from-blue-500 via-purple-500 to-pink-500`)
+- White text
+- Pill shape (`rounded-[50px]`)
+- Checks authentication before starting battle
+- Redirects to login if not authenticated
 
 #### ArenaBattlePage (`src/components/pages/ArenaBattlePage.tsx`)
 
@@ -857,21 +955,61 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - `title`: Modal title
 - `children`: Modal content
 
-#### SearchBar (`src/components/ui/SearchBar.tsx`)
+#### DomainIdentificationModal (`src/components/ui/DomainIdentificationModal.tsx`)
 
-**Purpose**: Search input with debouncing.
+**Purpose**: Displays identified domain with action options.
 
 **Features**:
-- Debounced search (500ms delay)
+- **Futuristic Design**: Soft purple/blue gradient background with animated border glow
+- Displays identified domain name
+- **Action Cards**: Three card-based buttons (Rankings, Battle, Retry)
+- **Authentication Check**: "Start Battle" checks if user is logged in
+- **Retry Functionality**: Allows retrying domain identification without closing modal
+- **Responsive**: Fits in viewport without scrolling, mobile-friendly
+- Close button (X) at top right
+
+**Props**:
+- `isOpen`: Controls modal visibility
+- `onClose`: Close handler
+- `domainName`: Identified domain name
+- `domainExists`: Whether domain exists in database
+- `domainSlug`: Domain slug for navigation
+- `onRetry`: Retry callback function
+- `onStartBattle`: Start battle callback
+- `isRetrying`: Loading state for retry
+- `onDomainUpdate`: Callback when domain is updated
+
+**Styling**:
+- Soft gradient background (`from-purple-50/80 via-blue-50/80 to-purple-50/80`)
+- Animated shimmer border effect
+- Card-based action buttons with hover effects
+- White/purple gradient modal background
+- Dark teal/purple text colors
+
+#### SearchBar (`src/components/ui/SearchBar.tsx`)
+
+**Purpose**: Search input with file upload support for domain identification.
+
+**Features**:
 - Controlled input value
 - Placeholder text
 - Size variants (sm, md, lg)
 - Search icon
+- **File upload support**: Allows image and PDF file uploads
+- **Enter key support**: Triggers search on Enter key press
+- **No automatic search**: Only searches when button is clicked or Enter is pressed
+
+**File Upload**:
+- Accepts: `image/*` and `.pdf` files
+- Client-side validation for file types
+- File preview with remove option
+- File input button with upload icon
 
 **Implementation**:
-- Uses `useCallback` and `useRef` for debouncing
-- Calls `onChange` immediately for controlled value
-- Calls `onSearch` after debounce delay
+- Uses controlled input for text value
+- `onSearch` callback triggered by Enter key or explicit button click
+- File upload handled via `onFileChange` callback
+- No automatic debounced search on text input
 
 #### Avatar (`src/components/ui/Avatar.tsx`)
 
@@ -889,9 +1027,10 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 
 **Features**:
 - Icon and domain name in same line (horizontal layout)
+- **No background on icons**: Icons display without background for cleaner look
 - Domain description with line clamping
 - Battle and model count statistics
-- "Explore Rankings" button with arrow icon
+- **"Explore Rankings" button**: Gradient button (blue to turquoise) with white text
 - Consistent card heights in grid layout
 - Hover effects (shadow, border color change)
 - Featured badge (optional)
@@ -903,6 +1042,13 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Uses flexbox for consistent heights (`h-full flex flex-col`)
 - Button positioned at bottom with `mt-auto`
 
+**Explore Rankings Button Styling**:
+- Gradient background: Blue → Turquoise (`from-blue-500 to-cyan-400`)
+- White text
+- Pill shape (`rounded-[50px]`)
+- No border
+- Hover opacity effect
+
 #### RankingsTable (`src/components/rankings/RankingsTable.tsx`)
 
 **Purpose**: Displays rankings in table format.
@@ -912,6 +1058,7 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Model logos from organization
 - Click row to open model details
 - Responsive design
+- **"Details" button only**: "Test" button has been removed
 
 **Columns**:
 - Rank: Model rank number
@@ -919,6 +1066,7 @@ function calculateNewElo(currentElo: number, expectedScore: number, actualScore:
 - Score: ELO score
 - Win Rate: Win percentage
 - Battles: Total battles
+- Actions: "Details" button (no "Test" button)
 
 #### ModelDetailsModal (`src/components/model/ModelDetailsModal.tsx`)
 
@@ -1435,7 +1583,7 @@ The application is configured for deployment to Azure App Service using GitHub A
 
 1. **Connection Pooling**: MongoDB connection is cached and reused
 2. **Database Indexes**: Unique and compound indexes for fast queries
-3. **Debouncing**: Search input is debounced to reduce API calls
+3. **Manual Search**: Search only triggers on button click or Enter key (no automatic debouncing)
 4. **Memoization**: `useCallback` used for stable function references
 5. **Lazy Loading**: Components loaded on demand
 6. **Image Optimization**: Next.js Image component for optimized images

@@ -235,24 +235,38 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user: userProp, isAuthenticat
       ) : (
         /* Login/Signup Section */
             <div className="pl-2 pr-1 pb-2 pt-2 space-y-1.5">
-              <button
-                onClick={() => {
-                  router.push('/login');
-                  setMobileMenuOpen(false);
+              <div 
+                className="w-full rounded-[50px] p-[2px]"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981, #3b82f6)',
                 }}
-                className="w-full pl-2 pr-1 py-1.5 rounded-lg text-sm font-bold text-dark-gray hover:bg-light-gray transition-all duration-200 border border-gray-200 hover:border-gray-300"
               >
-                Log in
-              </button>
-              <button
-                onClick={() => {
-                  router.push('/signup');
-                  setMobileMenuOpen(false);
+                <button
+                  onClick={() => {
+                    router.push('/login');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full pl-2 pr-1 py-1.5 rounded-[50px] text-sm font-bold text-teal-700 bg-white hover:bg-gray-50 transition-all duration-200 flex items-center justify-center"
+                >
+                  Log in
+                </button>
+              </div>
+              <div 
+                className="w-full rounded-[50px] p-[2px]"
+                style={{
+                  background: 'linear-gradient(135deg, #60a5fa, #a78bfa)',
                 }}
-                className="w-full pl-2 pr-1 py-1.5 rounded-lg text-sm font-bold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] transition-all duration-200 shadow-sm shadow-purple-200/30 flex items-center justify-center"
               >
-                Sign up
-              </button>
+                <button
+                  onClick={() => {
+                    router.push('/signup');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full pl-2 pr-1 py-1.5 rounded-[50px] text-sm font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all duration-200 flex items-center justify-center"
+                >
+                  Sign up
+                </button>
+              </div>
             </div>
           )}
         </div>

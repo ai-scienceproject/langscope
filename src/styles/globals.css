@@ -166,3 +166,13 @@
   transform-style: preserve-3d;
 }
 
+/* Shimmer animation for futuristic effects */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+

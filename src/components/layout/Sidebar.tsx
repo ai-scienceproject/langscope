@@ -475,7 +475,7 @@ const DomainsSidebar: React.FC<{
             onClick={() => {
               window.location.href = '/rankings';
             }}
-            className="w-full mt-4 sm:mt-6 px-4 py-2.5 text-sm font-semibold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] rounded-lg transition-all duration-300 hover:shadow-md hover:shadow-purple-300/40 hover:scale-[1.02]"
+            className="w-full mt-4 sm:mt-6 px-4 py-2.5 text-sm font-semibold text-gray-800 bg-[#E8E3FF] hover:bg-[#D8D0FF] rounded-lg transition-all duration-300"
           >
             View All Domains →
           </button>

@@ -2,6 +2,7 @@ import connectDB from '../connect';
 import Evaluation from '../models/Evaluation';
 import Battle from '../models/Battle';
 import ModelRanking from '../models/ModelRanking';
+import Model from '../models/Model';
 import mongoose from 'mongoose';
 import { getOrganizationLogo } from '@/lib/utils/modelIcons';
 
@@ -206,7 +207,7 @@ export async function getEvaluationStats(id: string) {
   const missingModelIds = Array.from(evaluationModelIds).filter(id => !rankingModelIds.has(id));
   
   // For models without rankings, fetch model info and create placeholder entries
-  const Model = (await import('../models/Model')).default;
+  // Model is already imported at the top of the file
   const missingRankings = await Promise.all(
     missingModelIds.map(async (modelId: string) => {
       try {

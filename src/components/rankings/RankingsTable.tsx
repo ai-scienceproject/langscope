@@ -251,9 +251,6 @@ const RankingsTable: React.FC<RankingsTableProps> = ({
                       >
                         Details
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Test
-                      </Button>
                     </div>
                   </td>
                 </tr>

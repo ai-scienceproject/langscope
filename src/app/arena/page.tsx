@@ -186,7 +186,7 @@ export default function ArenaIndexPage() {
                     </div>
                     <Button
                       variant="primary"
-                      className="w-full mt-3 flex-shrink-0"
+                      className="w-full mt-3 flex-shrink-0 flex items-center gap-[10px] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white px-8 py-[10px] rounded-[50px] border-0 hover:opacity-90 transition-all duration-200 shadow-lg"
                       onClick={() => handleStartBattle(domain.slug)}
                     >
                       Start Battle ⚔️

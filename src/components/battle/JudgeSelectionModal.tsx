@@ -136,7 +136,7 @@ const JudgeSelectionModal: React.FC<JudgeSelectionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Select Judge Type"
+      title={judgeType === 'human' ? 'Select Models' : judgeType === 'llm' ? 'LLM Judge' : 'Select Judge Type'}
       size="lg"
     >
       <div className="space-y-6">
@@ -192,12 +192,6 @@ const JudgeSelectionModal: React.FC<JudgeSelectionModalProps> = ({
         {judgeType === 'human' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Select 2 Models to Evaluate
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Choose exactly 2 models from OpenRouter to participate in the battle
-              </p>
               {selectedModels.length > 0 && (
                 <p className="text-sm text-primary-600 mb-4">
                   {selectedModels.length} of 2 models selected
@@ -294,8 +288,14 @@ const JudgeSelectionModal: React.FC<JudgeSelectionModalProps> = ({
                           type="checkbox"
                           checked={isSelected}
                           disabled={isDisabled}
-                          onChange={() => !isDisabled && handleModelToggle(model.id)}
-                          className="ml-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (!isDisabled) {
+                              handleModelToggle(model.id);
+                            }
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="ml-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer"
                         />
                       </div>
                     </div>
@@ -336,7 +336,6 @@ const JudgeSelectionModal: React.FC<JudgeSelectionModalProps> = ({
                   <li>Select 2 random models to evaluate</li>
                   <li>Select 1 random question from OpenRouter</li>
                   <li>Use a random LLM as judge to evaluate all answers</li>
-                  <li>Save results to MongoDB after evaluation</li>
                   <li>Show results after all evaluations are complete</li>
                 </ul>
               </div>

@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import SearchBar from '@/components/ui/SearchBar';
 import Button from '@/components/ui/Button';
 import HeroImage from '@/components/ui/HeroImage';
+import DomainIdentificationModal from '@/components/ui/DomainIdentificationModal';
+import JudgeSelectionModal from '@/components/battle/JudgeSelectionModal';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Domain } from '@/types';
 
@@ -16,8 +18,19 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
   const { user, isAuthenticated } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [domains, setDomains] = useState<Domain[]>(initialDomains);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [identifiedDomain, setIdentifiedDomain] = useState<{
+    name: string;
+    exists: boolean;
+    slug?: string;
+  } | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showJudgeModal, setShowJudgeModal] = useState(false);
+  const [selectedDomainSlug, setSelectedDomainSlug] = useState<string | null>(null);
   const isInitialMount = useRef(true);
   const lastPathnameRef = useRef(pathname);
 
@@ -64,19 +77,16 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       
-      // Always fetch fresh data on mount to get updated battle counts
-      // Use a small delay to avoid blocking initial render
-      const timer = setTimeout(() => {
-        fetchDomains();
-      }, 100);
-      
       // Clear battleCompleted flag if it exists
       const battleCompleted = sessionStorage.getItem('battleCompleted');
       if (battleCompleted === 'true') {
         sessionStorage.removeItem('battleCompleted');
+        // Only fetch if battle was completed, otherwise use initial data
+        fetchDomains();
       }
+      // If no battle was completed, use initialDomains without fetching
       
-      return () => clearTimeout(timer);
+      return;
     }
   }, [fetchDomains]);
 
@@ -93,14 +103,137 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
     lastPathnameRef.current = pathname;
   }, [pathname, fetchDomains]);
 
-  const handleSearch = (query: string) => {
-    // This is called by the debounced onSearch callback
-    // The searchQuery state is already updated by onChange
-    // So we don't need to update it here again
-    // Only perform search action if there's a non-empty term
-    if (query.trim()) {
-      // Redirect to rankings with search or show filtered domains
-      // For now, just filter domains. In future, could redirect to search results page
+  const handleSearch = async (query: string) => {
+    // Text is mandatory
+    if (!query.trim()) {
+      alert('Please enter a description of your use case to search for a domain.');
+      return;
+    }
+
+    setIsIdentifying(true);
+    try {
+      // Prepare form data (text is mandatory)
+      const formData = new FormData();
+      formData.append('text', query.trim());
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
+      // Call domain identification API
+      const identifyResponse = await fetch('/api/identify-domain', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!identifyResponse.ok) {
+        const error = await identifyResponse.json();
+        throw new Error(error.error || 'Failed to identify domain');
+      }
+
+      const identifyResult = await identifyResponse.json();
+      const domainName = identifyResult.domainName;
+
+      // Check if domain exists or create it
+      const checkResponse = await fetch('/api/domains/check-or-create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domainName }),
+      });
+
+      if (!checkResponse.ok) {
+        throw new Error('Failed to check or create domain');
+      }
+
+      const checkResult = await checkResponse.json();
+      
+      setIdentifiedDomain({
+        name: domainName,
+        exists: checkResult.exists,
+        slug: checkResult.domain.slug,
+      });
+      setShowModal(true);
+    } catch (error: any) {
+      console.error('Error identifying domain:', error);
+      alert(error.message || 'Failed to identify domain. Please try again.');
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
+  const handleStartBattle = () => {
+    if (!identifiedDomain || !identifiedDomain.slug) return;
+    
+    // Show judge selection modal (same as arena page)
+    setSelectedDomainSlug(identifiedDomain.slug);
+    setShowJudgeModal(true);
+  };
+
+  const handleJudgeSelection = (judgeType: 'human' | 'llm', selectedModels?: string[]) => {
+    if (!selectedDomainSlug) return;
+    
+    const params = new URLSearchParams();
+    if (judgeType === 'human' && selectedModels && selectedModels.length > 0) {
+      params.set('judge', 'human');
+      params.set('models', selectedModels.join(','));
+    } else if (judgeType === 'llm') {
+      params.set('judge', 'llm');
+    }
+    
+    router.push(`/arena/${selectedDomainSlug}?${params.toString()}`);
+  };
+
+  const handleRetryIdentification = async () => {
+    // This function is called by the modal for retry
+    // It doesn't affect the search button state
+    try {
+      // Prepare form data (text is mandatory)
+      const formData = new FormData();
+      formData.append('text', searchQuery.trim());
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
+      // Call domain identification API
+      const identifyResponse = await fetch('/api/identify-domain', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!identifyResponse.ok) {
+        const error = await identifyResponse.json();
+        throw new Error(error.error || 'Failed to identify domain');
+      }
+
+      const identifyResult = await identifyResponse.json();
+      const domainName = identifyResult.domainName;
+
+      // Check if domain exists or create it
+      const checkResponse = await fetch('/api/domains/check-or-create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domainName }),
+      });
+
+      if (!checkResponse.ok) {
+        throw new Error('Failed to check or create domain');
+      }
+
+      const checkResult = await checkResponse.json();
+      
+      setIdentifiedDomain({
+        name: domainName,
+        exists: checkResult.exists,
+        slug: checkResult.domain.slug,
+      });
+      // Keep modal open, just update the domain
+      return { success: true, domain: { name: domainName, exists: checkResult.exists, slug: checkResult.domain.slug } };
+    } catch (error: any) {
+      console.error('Error identifying domain:', error);
+      throw error;
     }
   };
 
@@ -146,10 +279,16 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
             <div className="relative">
               <SearchBar
                 placeholder="Describe your use case..."
-                onSearch={handleSearch}
+                onFileChange={setSelectedFile}
                 value={searchQuery}
                 onChange={(value) => setSearchQuery(value)}
+                onSearch={(query) => {
+                  if (query.trim()) {
+                    handleSearch(query);
+                  }
+                }}
                 size="lg"
+                allowFileUpload={true}
               />
             </div>
             {/* Search Button */}
@@ -158,9 +297,11 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
                 onClick={() => handleSearch(searchQuery)}
                 variant="outline"
                 size="lg"
-                className="w-auto px-6 sm:px-8 bg-white border-2 border-gray-300 text-gray-900 font-semibold hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200"
+                className="flex items-center gap-[10px] bg-gradient-to-r from-purple-500 via-blue-500 to-teal-400 text-white px-7 py-[10px] rounded-[50px] border-0 hover:opacity-90 transition-all duration-200 shadow-lg"
+                loading={isIdentifying}
+                disabled={isIdentifying}
               >
-                Search
+                Search Domain
               </Button>
             </div>
           </div>
@@ -212,7 +353,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
           onClick={() => {
             window.location.href = '/rankings';
           }}
-          className="w-full mt-4 px-4 py-2.5 text-sm font-semibold text-[rgb(29,61,60)] bg-[#E8E3FF] hover:bg-[#D8D0FF] rounded-lg transition-all duration-300 shadow-lg shadow-purple-200/30"
+          className="w-full mt-4 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 rounded-lg transition-all duration-300 border border-gray-200 shadow-sm"
         >
           View All Domains →
         </button>
@@ -304,6 +445,35 @@ const HomePage: React.FC<HomePageProps> = ({ initialDomains = [] }) => {
           ))}
         </div>
       </section>
+
+      {/* Domain Identification Modal */}
+      {identifiedDomain && (
+        <DomainIdentificationModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          domainName={identifiedDomain.name}
+          onRetry={handleRetryIdentification}
+          domainExists={identifiedDomain.exists}
+          domainSlug={identifiedDomain.slug}
+          onStartBattle={handleStartBattle}
+          onDomainUpdate={(domain) => {
+            setIdentifiedDomain(domain);
+          }}
+        />
+      )}
+
+      {/* Judge Selection Modal */}
+      {selectedDomainSlug && (
+        <JudgeSelectionModal
+          isOpen={showJudgeModal}
+          onClose={() => {
+            setShowJudgeModal(false);
+            setSelectedDomainSlug(null);
+          }}
+          onSelectJudge={handleJudgeSelection}
+          domainSlug={selectedDomainSlug}
+        />
+      )}
     </Layout>
   );
 };

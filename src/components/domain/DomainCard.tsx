@@ -65,7 +65,10 @@ const DomainCard: React.FC<DomainCardProps> = ({
             onClick={() => {
               window.location.href = `/rankings/${domain.slug}`;
             }}
-            className="w-full rounded-lg font-medium hover:bg-light-gray hover:border-black text-xs sm:text-sm mt-auto"
+            className="w-full rounded-[50px] font-medium text-white text-xs sm:text-sm mt-auto border-0 hover:opacity-90 transition-all duration-200"
+            style={{
+              background: 'linear-gradient(to right, #3b82f6, #06b6d4)',
+            }}
             iconPosition="right"
             icon={
               <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

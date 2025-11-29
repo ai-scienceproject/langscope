@@ -364,6 +364,27 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
     fetchResults();
   }, [evaluationId, domainSlug]);
 
+  // Handle browser back button - redirect to home page
+  useEffect(() => {
+    const handlePopState = () => {
+      // Push current state back to prevent navigation
+      window.history.pushState(null, '', window.location.href);
+      
+      // Immediately redirect to home page
+      window.location.replace('/');
+    };
+
+    // Add a history entry to intercept back navigation
+    window.history.pushState(null, '', window.location.href);
+
+    // Listen for popstate events (back/forward button)
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   const handleExportPDF = async () => {
     if (!results) return;
 
@@ -376,7 +397,6 @@ const ResultsDashboardPageContent: React.FC<ResultsDashboardPageProps> = ({ eval
       let yPos = 20;
       const margin = 20;
       const lineHeight = 7;
-      const sectionSpacing = 10;
 
       // Helper function to add a new page if needed
       const checkPageBreak = (requiredSpace: number) => {
@@ -817,9 +837,10 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
               </div>
             )}
 
-            {/* Full Rankings Table - All Models */}
+            {/* Overall Rankings Table - Only Models in This Evaluation */}
             <div className="mb-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Overall Rankings</h3>
+              <p className="text-sm text-gray-600 mb-4">Showing only models that participated in this evaluation</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -834,60 +855,62 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {results.rankings.map((ranking) => {
-                    const isUserModel = ranking.rank === results.userRank;
-                    const isInEvaluation = results.evaluationRankings?.some(er => er.model.id === ranking.model.id);
-                    const predictedRankForModel = ranking.rank === results.userRank ? results.predictedRank : ranking.rank;
-                    return (
-                      <tr
-                        key={ranking.model.id}
-                        className={`${isUserModel ? 'bg-primary-50' : isInEvaluation ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                      >
-                        <td className="px-6 py-4">
-                          <span className={`text-2xl font-bold ${isUserModel ? 'text-primary-700' : 'text-gray-900'}`}>
-                            #{ranking.rank}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            {/* Organization Logo */}
-                            <Avatar
-                              src={ranking.model.logo}
-                              alt={ranking.model.provider}
-                              size="md"
-                              shape="square"
-                              fallback={ranking.model.provider.charAt(0)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium ${isUserModel ? 'text-primary-900' : 'text-gray-900'} truncate`}>
-                                {ranking.model.name}
-                                {isInEvaluation && (
-                                  <span className="ml-2 text-xs bg-primary-600 text-white px-2 py-0.5 rounded">
-                                    In This Evaluation
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-sm text-gray-500 truncate">{ranking.model.provider}</p>
+                  {results.evaluationRankings && results.evaluationRankings.length > 0 ? (
+                    results.evaluationRankings.map((ranking) => {
+                      const isUserModel = ranking.rank === results.userRank;
+                      const predictedRankForModel = ranking.rank === results.userRank ? results.predictedRank : ranking.rank;
+                      return (
+                        <tr
+                          key={ranking.model.id}
+                          className={`${isUserModel ? 'bg-primary-50' : 'hover:bg-gray-50'}`}
+                        >
+                          <td className="px-6 py-4">
+                            <span className={`text-2xl font-bold ${isUserModel ? 'text-primary-700' : 'text-gray-900'}`}>
+                              #{ranking.rank}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {/* Organization Logo */}
+                              <Avatar
+                                src={ranking.model.logo}
+                                alt={ranking.model.provider}
+                                size="md"
+                                shape="square"
+                                fallback={ranking.model.provider.charAt(0)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className={`font-medium ${isUserModel ? 'text-primary-900' : 'text-gray-900'} truncate`}>
+                                  {ranking.model.name}
+                                </p>
+                                <p className="text-sm text-gray-500 truncate">{ranking.model.provider}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-gray-600">#{predictedRankForModel}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`text-sm font-semibold ${isUserModel ? 'text-primary-700' : 'text-gray-900'}`}>
-                            #{ranking.rank}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-lg font-semibold text-gray-900">{ranking.score}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-gray-900">{ranking.winRate.toFixed(1)}%</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-600">#{predictedRankForModel}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`text-sm font-semibold ${isUserModel ? 'text-primary-700' : 'text-gray-900'}`}>
+                              #{ranking.rank}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-lg font-semibold text-gray-900">{ranking.score}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-gray-900">{ranking.winRate.toFixed(1)}%</span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                        No models evaluated in this session yet.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -898,13 +921,16 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
         <Card className="mb-8">
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Win/Loss Matrix</h2>
+            <p className="text-sm text-gray-600 mb-4">Showing only models that participated in this evaluation</p>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border border-gray-300 bg-gray-50"></th>
                     {Object.keys(results.winLossMatrix).map((modelId) => {
-                      const model = results.rankings.find(r => r.model.id === modelId)?.model;
+                      // Use evaluationRankings to find model info
+                      const model = results.evaluationRankings?.find(r => r.model.id === modelId)?.model 
+                        || results.rankings.find(r => r.model.id === modelId)?.model;
                       return (
                         <th key={modelId} className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border border-gray-300 bg-gray-50">
                           {model?.name || modelId}
@@ -915,7 +941,9 @@ Evaluation Complete - {results.totalBattles} battles - {results.modelsTested} mo
                 </thead>
                 <tbody>
                   {Object.entries(results.winLossMatrix).map(([modelA, vsModels]) => {
-                    const model = results.rankings.find(r => r.model.id === modelA)?.model;
+                    // Use evaluationRankings to find model info
+                    const model = results.evaluationRankings?.find(r => r.model.id === modelA)?.model 
+                      || results.rankings.find(r => r.model.id === modelA)?.model;
                     const vsModelsTyped = vsModels as { [key: string]: { wins: number; losses: number } };
                     return (
                       <tr key={modelA}>
